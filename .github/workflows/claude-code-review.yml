@@ -10,6 +10,8 @@ jobs:
     # Maintainers review fork PRs by commenting @claude (claude.yml) or via CodeRabbit.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    env:
+      HAS_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     permissions:
       contents: read
       pull-requests: write  # the OIDC-minted app token is scoped to these perms; write lets Claude post the review
@@ -24,6 +26,8 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
+        # Skip cleanly (instead of failing auth) until the repo secret is added.
+        if: env.HAS_CLAUDE_TOKEN == 'true'
         uses: anthropics/claude-code-action@cc98b3ae241b0fcfb6a42a2690751afffecb4452 # v1
         env:
           # `gh` in the Bash tool needs a token to post; the default workflow

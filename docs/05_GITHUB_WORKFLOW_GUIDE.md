@@ -49,9 +49,9 @@ Opening or updating a PR runs:
 
 - **Android CI** (`android-ci.yml`) — build, unit tests, lint; uploads `stad-debug-apk`.
 - **CodeRabbit** — the main reviewer. A GitHub App configured by `.coderabbit.yaml` (project context, `core/` purity, Play-policy checks). Skips draft PRs; comment `@coderabbitai review` to trigger it by hand.
-- **Claude Code Review** (`claude-code-review.yml`) — optional second review. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret, and skips silently without it. Doesn't run on PRs from forks (no secrets there); review those with CodeRabbit or an `@claude` comment.
+- **Claude Code Review** (`claude-code-review.yml`) — optional second review. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret; until it is added, the review step is skipped by an explicit guard in the workflow. Doesn't run on PRs from forks (no secrets there); review those with CodeRabbit or a comment mentioning `@claude`.
 
-Third-party actions are pinned to full commit SHAs with the version in a trailing comment (`uses: actions/checkout@<sha> # v4`). To upgrade, look up the new tag's SHA with `git ls-remote https://github.com/<owner>/<repo> refs/tags/<tag>` and replace both.
+Third-party actions are pinned to full commit SHAs with the version in a trailing comment (`uses: actions/checkout@<sha> # v4`). To upgrade, look up the new tag's commit with `git ls-remote https://github.com/<owner>/<repo> 'refs/tags/<tag>' 'refs/tags/<tag>^{}'` and replace both. If a `^{}` (peeled) line is printed, the tag is annotated: use that line's SHA, because the plain line is the tag object, not the commit. Otherwise use the plain line's SHA.
 - **`@claude`** in any PR or issue comment (`claude.yml`) asks Claude to act on it.
 
 ### Merge and tag

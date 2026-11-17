@@ -1,0 +1,59 @@
+package cc.stadapp.stad.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import cc.stadapp.stad.R
+import cc.stadapp.stad.core.LockState
+import cc.stadapp.stad.ui.theme.StadTheme
+
+/**
+ * Phase 0 placeholder home screen: app name, tagline and the current lock state.
+ * The lock state is always [LockState.Unlocked] until slice 1.2 wires the blocking engine.
+ */
+@Composable
+fun HomeScreen(state: LockState = LockState.Unlocked) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displayMedium,
+            )
+            Text(
+                text = stringResource(R.string.tagline),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Text(
+                text = stringResource(
+                    if (state.isLocked) R.string.state_locked else R.string.state_unlocked
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 32.dp),
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun HomeScreenPreview() {
+    StadTheme { HomeScreen() }
+}

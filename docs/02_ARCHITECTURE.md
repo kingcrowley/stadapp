@@ -40,7 +40,7 @@ Small enough to live here rather than in its own document.
 | `MainActivity` | 0 | Compose host |
 | `BlockerAccessibilityService` | 1.2 | Watches `TYPE_WINDOW_STATE_CHANGED`; if the foreground package is blocked and state is `Locked`, shows the block screen |
 | `BlockedActivity` | 1.2 | Full-screen "Blocked, tap your tag to unlock" screen |
-| NFC handling | 1.3 | Foreground dispatch while Stad is open, plus a `TAG_DISCOVERED` intent filter so a tap works from anywhere |
+| NFC handling | 1.3 | Pairing writes a Stad NDEF record (Stad URI plus an Android Application Record) to the tag, and an `NDEF_DISCOVERED` filter for that record lets a tap reach Stad from anywhere. `TAG_DISCOVERED` is only a last-resort intent, so Stad can't rely on it. Another app with a matching filter can still win dispatch or show a chooser. Foreground dispatch while Stad is open always works, and opening Stad before tapping is the documented fallback. Supported tags: NDEF-formattable NFC Forum Type 2 (e.g. NTAG213/215/216). The 1.3 spec settles the details. |
 | `BootReceiver` | 2.1 | Re-asserts the lock after reboot |
 | Device admin / settings guards | 2.2 | Block uninstall and disabling the Accessibility service while locked |
 

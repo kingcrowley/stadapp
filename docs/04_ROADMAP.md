@@ -34,10 +34,10 @@ Pair a tag by UID; tapping the paired tag toggles `LockState`; other tags are ig
 ## Phase 2: Strict mode
 
 ### 2.1 — Lock survives
-Reboot, force-stop and app update all leave the lock in place.
+Reboot and app update leave the lock in place. The lock is persisted, so it resumes after a force-stop as soon as Stad runs again (Android doesn't restart a force-stopped app on its own).
 
 ### 2.2 — Close the escape routes
-While locked: block uninstalling Stad and disabling its Accessibility service.
+While locked: block uninstalling Stad, disabling its Accessibility service, and reaching its App info screen (where Force stop lives).
 
 ### 2.3 — Sneaky look
 Timed peek (default 5 min) with a cooldown (default 3 h), both configurable while unlocked.

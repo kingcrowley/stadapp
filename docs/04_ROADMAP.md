@@ -34,7 +34,7 @@ Pair a tag by UID; tapping the paired tag toggles `LockState`; other tags are ig
 ## Phase 2: Strict mode
 
 ### 2.1 — Lock survives
-Reboot and app update leave the lock in place. The lock is persisted, so it resumes after a force-stop as soon as Stad runs again (Android doesn't restart a force-stopped app on its own).
+Reboot and app update leave the lock in place. After a force-stop the saved lock state survives, but Android doesn't restart a force-stopped app on its own and may disable its Accessibility service. Blocking resumes once the user opens Stad and, if needed, re-enables the service; Stad prompts for this.
 
 ### 2.2 — Close the escape routes
 While locked: block uninstalling Stad, disabling its Accessibility service, and reaching its App info screen (where Force stop lives).

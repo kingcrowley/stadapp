@@ -30,7 +30,7 @@
 | Escape route | Response | Slice |
 |--------------|----------|-------|
 | Reboot | Lock state persisted; service restarts; boot receiver re-checks | 2.1 |
-| Force-stop Stad | Not automatically recoverable: since Android 15 a force-stopped app stays stopped until the user opens it, and the system may disable its Accessibility service. So while locked, Stad blocks its own App info screen so Force stop can't be reached. If a force-stop happens anyway (e.g. via adb), the persisted lock resumes the next time Stad runs. Onboarding says this plainly rather than promising more | 2.1 / 2.2 |
+| Force-stop Stad | Not automatically recoverable: since Android 15 a force-stopped app stays stopped until the user opens it, and the system may disable its Accessibility service. So while locked, Stad blocks its own App info screen so Force stop can't be reached. If a force-stop happens anyway (e.g. via adb), the saved lock state survives, but blocking is off until the user opens Stad and, if Android disabled it, re-enables Stad's Accessibility service in system settings. Stad detects this on open and walks the user through it. Onboarding says this plainly rather than promising more | 2.1 / 2.2 |
 | App update | State persisted across `MY_PACKAGE_REPLACED` | 2.1 |
 | Uninstall Stad | Device admin prevents uninstall while locked (exact mechanism decided in the 2.2 spec) | 2.2 |
 | Disable Accessibility service | Block the Accessibility settings screen while locked | 2.2 |

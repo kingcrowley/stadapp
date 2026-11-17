@@ -33,8 +33,8 @@
 - [x] `.github/workflows/android-ci.yml`: Temurin 17, setup-gradle, `assembleDebug testDebugUnitTest lintDebug`, upload reports + debug APK
 - [x] `claude-code-review.yml` and `claude.yml` from Unnamed-RPG
 - [x] PR template
-- [ ] CI green on PR #1
-- [ ] Claude review comment appears (needs `CLAUDE_CODE_OAUTH_TOKEN` secret)
+- [x] CI green on PR #1
+- [x] CodeRabbit set up as the PR reviewer (`.coderabbit.yaml`); Claude review kept, needs `CLAUDE_CODE_OAUTH_TOKEN`
 
 ## Task 6: Docs
 

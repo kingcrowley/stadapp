@@ -1,0 +1,54 @@
+# CodeRabbit config: https://docs.coderabbit.ai/reference/configuration
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-GB
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_filters:
+    - "!gradle/wrapper/gradle-wrapper.jar"
+    - "!**/build/**"
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        Stad is an open-source (GPL-3.0) Android app blocker written in Kotlin with
+        Jetpack Compose and Material 3 (min SDK 26, target SDK 36). Tapping a paired
+        NFC tag locks the user's chosen apps; tapping it again unlocks them.
+        Project rules live in CLAUDE.md and docs/. Work is delivered in slices,
+        each with a spec and plan under docs/superpowers/.
+    - path: "app/src/main/java/**/core/**"
+      instructions: |
+        core/ must stay pure Kotlin: no android.* or androidx.* imports, so it can be
+        unit-tested on the JVM. Flag any Android dependency here and any decision
+        logic that should have a unit test but doesn't.
+    - path: "app/src/main/**"
+      instructions: |
+        Check every change against docs/06_PLAY_POLICY.md. In particular flag:
+        new permissions in AndroidManifest.xml; any AccessibilityService use beyond
+        reading the foreground package name (e.g. canRetrieveWindowContent, reading
+        screen text); QUERY_ALL_PACKAGES; any network access, analytics, accounts or
+        data leaving the device; and anything that would block the Phone/Dialer app,
+        the launcher, or Stad itself. Also flag proprietary dependencies (Google Play
+        Services, Firebase) because they break F-Droid builds.
+    - path: "app/src/main/AndroidManifest.xml"
+      instructions: |
+        Every permission must be listed and justified in docs/02_ARCHITECTURE.md and
+        docs/06_PLAY_POLICY.md. Flag any that are not. No INTERNET permission.
+    - path: "docs/**"
+      instructions: |
+        Keep docs consistent with each other and with the code (roadmap, CLAUDE.md
+        status table, CHANGELOG test counts). Prose is British/Irish English.
+    - path: ".github/workflows/**"
+      instructions: |
+        Flag secrets echoed to logs, overly broad permissions, and unpinned
+        third-party actions.
+chat:
+  auto_reply: true

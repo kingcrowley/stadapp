@@ -48,7 +48,8 @@ Run before each commit:
 Opening or updating a PR runs:
 
 - **Android CI** (`android-ci.yml`) — build, unit tests, lint; uploads `stad-debug-apk`.
-- **Claude Code Review** (`claude-code-review.yml`) — posts a summary review comment. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret.
+- **CodeRabbit** — the main reviewer. A GitHub App configured by `.coderabbit.yaml` (project context, `core/` purity, Play-policy checks). Skips draft PRs; comment `@coderabbitai review` to trigger it by hand.
+- **Claude Code Review** (`claude-code-review.yml`) — optional second review. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret, and skips silently without it.
 - **`@claude`** in any PR or issue comment (`claude.yml`) asks Claude to act on it.
 
 ### Merge and tag

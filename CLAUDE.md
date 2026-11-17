@@ -46,6 +46,7 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 
 | Phase / Slice | State | Unit tests | Tag / PR |
 |---------------|-------|-----------|----------|
-| Phase 0 — Foundation | In review | 5 | PR #1 |
+| Phase 0 — Foundation | Merged | 5 | PR #1, `Phase0-Foundation-Complete` |
+| 1.1 — Block list | Planned | — | branch `phase/1-slice1-block-list` |
 
-**Next up:** Slice 1.1 — Block list (pick apps, persist the list). See `docs/04_ROADMAP.md`.
+**Next up:** Slice 1.1 — Block list (pick apps, persist the list). Spec: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`; plan: `docs/superpowers/plans/2026-11-17-slice1.1-block-list.md`.

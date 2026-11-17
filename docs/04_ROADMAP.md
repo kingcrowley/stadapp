@@ -4,7 +4,7 @@
 
 Build vertical slices. Every slice ends with something you can install on a phone and try, plus JVM unit tests for its core logic. Don't build systems in isolation.
 
-## Phase 0: Foundation — in review (PR #1)
+## Phase 0: Foundation — done (PR #1)
 
 **Goal:** an empty, buildable app with docs and CI.
 
@@ -19,7 +19,7 @@ Build vertical slices. Every slice ends with something you can install on a phon
 
 ## Phase 1: Core loop
 
-### 1.1 — Block list
+### 1.1 — Block list (planned: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`)
 Pick apps from the installed launchable apps; the selection persists (DataStore).
 **Test:** pick apps, kill and reopen Stad, the selection is still there.
 

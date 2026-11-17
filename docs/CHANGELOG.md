@@ -2,7 +2,7 @@
 
 Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
-## Phase 0 — Foundation (PR #1)
+## Phase 0 — Foundation (PR #1, merged 2026-11-17)
 
 - Repository set up: GPL-3.0 license, README, `.gitignore`, PR template.
 - Docs: `01_START_HERE`, `02_ARCHITECTURE`, `03_PRODUCT_DESIGN`, `04_ROADMAP`, `05_GITHUB_WORKFLOW_GUIDE`, `06_PLAY_POLICY`, this changelog, and `CLAUDE.md`.

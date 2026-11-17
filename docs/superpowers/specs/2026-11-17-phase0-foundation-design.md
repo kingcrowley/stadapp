@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-17
 **Branch:** `phase/0-foundation`
-**Status:** in review (PR #1)
+**Status:** merged (PR #1)
 
 ## Problem
 

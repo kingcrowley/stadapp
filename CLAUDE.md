@@ -38,7 +38,7 @@ See `docs/02_ARCHITECTURE.md`. In short:
 
 ## Workflow
 
-Phases → slices. One branch per slice (`phase/N-sliceX-name`), a spec + plan in `docs/superpowers/specs|plans/`, a PR reviewed by the Claude review workflow, squash-merge into `main`, tag `PhaseN-SliceX-Complete`. Full detail: `docs/05_GITHUB_WORKFLOW_GUIDE.md`.
+Phases → slices. One branch per slice (`phase/N-sliceX-name`), a spec + plan in `docs/superpowers/specs/` and `docs/superpowers/plans/`, a PR reviewed by the Claude review workflow, squash-merge into `main`, tag `PhaseN-SliceX-Complete`. Full detail: `docs/05_GITHUB_WORKFLOW_GUIDE.md`.
 
 ## Current Status
 

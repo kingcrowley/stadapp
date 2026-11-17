@@ -49,7 +49,9 @@ Opening or updating a PR runs:
 
 - **Android CI** (`android-ci.yml`) — build, unit tests, lint; uploads `stad-debug-apk`.
 - **CodeRabbit** — the main reviewer. A GitHub App configured by `.coderabbit.yaml` (project context, `core/` purity, Play-policy checks). Skips draft PRs; comment `@coderabbitai review` to trigger it by hand.
-- **Claude Code Review** (`claude-code-review.yml`) — optional second review. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret, and skips silently without it.
+- **Claude Code Review** (`claude-code-review.yml`) — optional second review. Needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret, and skips silently without it. Doesn't run on PRs from forks (no secrets there); review those with CodeRabbit or an `@claude` comment.
+
+Third-party actions are pinned to full commit SHAs with the version in a trailing comment (`uses: actions/checkout@<sha> # v4`). To upgrade, look up the new tag's SHA with `git ls-remote https://github.com/<owner>/<repo> refs/tags/<tag>` and replace both.
 - **`@claude`** in any PR or issue comment (`claude.yml`) asks Claude to act on it.
 
 ### Merge and tag

@@ -34,7 +34,7 @@ There is no project yet. Before any feature work, Stad needs a repository that b
 | Build | Gradle 8.14.3 wrapper, Kotlin DSL, version catalog | One place for versions |
 | JDK | 17 (toolchain) | AGP requirement; CI uses Temurin 17 |
 | Tests | JUnit 4 on the JVM | Fast, no emulator needed in CI; domain logic lives in pure-Kotlin `core/` |
-| Docs location for slice specs/plans | `docs/superpowers/specs|plans/` | Same layout as Unnamed-RPG |
+| Docs location for slice specs and plans | `docs/superpowers/specs/` and `docs/superpowers/plans/` | Same layout as Unnamed-RPG |
 
 ## Acceptance
 

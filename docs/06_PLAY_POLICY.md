@@ -11,7 +11,7 @@ App blockers may use an AccessibilityService, but it is a restricted use:
 | Declare the Accessibility use in the Play Console (permission declaration form) with a video of the feature | Declaration + screen recording of lock → block screen → unlock | 3.2 |
 | **Prominent disclosure** in-app before the user enables the service: what is accessed, why, and that it is required | Dedicated onboarding screen before sending the user to system settings; must be shown in normal app flow, not only in a privacy policy | 3.1 |
 | Affirmative user consent | "I understand" button on that screen; Stad never enables the service itself | 3.1 |
-| Not used to collect personal or sensitive data | Service reads only the foreground package name; nothing is stored beyond the user's own block list; no network permission | 1.2 |
+| Not used to collect personal or sensitive data | The service reads only the foreground app's package name, uses it to decide whether to block, and never stores or logs it. Stad stores only the user's own settings on the device: the block list (1.1), the paired tag's UID (1.3), the lock state (2.1) and sneaky-look timings (2.3). Nothing leaves the device; no network permission | 1.2 |
 | Service config is minimal | `accessibility_service_config.xml` subscribes only to window-state changes, no `canRetrieveWindowContent` unless a slice proves it needs it | 1.2 |
 
 ## Other permissions

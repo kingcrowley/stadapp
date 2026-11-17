@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 See `docs/02_ARCHITECTURE.md`. In short:
 
 1. **core/** — pure Kotlin domain logic (lock state, block list rules, sneaky-look timing). No Android imports, fully JVM-unit-tested. Put logic here whenever possible.
-2. **data/** — persistence (block list, paired tag id, lock state). Slice 1.1+.
+2. **data/** — persistence (block list, paired tag id, lock state) in one app-wide Preferences DataStore. Slice 1.1+.
 3. **service/** — Android integration: AccessibilityService that detects blocked apps (1.2), NFC tag handling (1.3), boot receiver (2.1).
 4. **ui/** — Jetpack Compose screens + theme.
 
@@ -47,6 +47,6 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 | Phase / Slice | State | Unit tests | Tag / PR |
 |---------------|-------|-----------|----------|
 | Phase 0 — Foundation | Merged | 5 | PR #1, `Phase0-Foundation-Complete` |
-| 1.1 — Block list | Planned | — | branch `phase/1-slice1-block-list` |
+| 1.1 — Block list | In review | 32 | PR #2 |
 
-**Next up:** Slice 1.1 — Block list (pick apps, persist the list). Spec: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`; plan: `docs/superpowers/plans/2026-11-17-slice1.1-block-list.md`.
+**Next up:** Slice 1.2 — Blocking engine (AccessibilityService + block screen, debug lock toggle). Slice 1.1 spec: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`; plan: `docs/superpowers/plans/2026-11-17-slice1.1-block-list.md`.

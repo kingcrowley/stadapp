@@ -3,4 +3,13 @@
     <string name="tagline">Tap a tag to lock your distracting apps.</string>
     <string name="state_unlocked">Unlocked</string>
     <string name="state_locked">Locked</string>
+    <plurals name="apps_blocked">
+        <item quantity="one">%d app blocked</item>
+        <item quantity="other">%d apps blocked</item>
+    </plurals>
+    <string name="choose_apps">Choose apps</string>
+    <string name="search_apps">Search apps</string>
+    <string name="no_apps_match">No apps match your search.</string>
+    <string name="cannot_be_blocked">Can\'t be blocked</string>
+    <string name="list_locked_banner">Unlock with your tag to change this list.</string>
 </resources>

@@ -19,7 +19,7 @@ Build vertical slices. Every slice ends with something you can install on a phon
 
 ## Phase 1: Core loop
 
-### 1.1 — Block list (planned: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`)
+### 1.1 — Block list (in review, PR #2)
 Pick apps from the installed launchable apps; the selection persists (DataStore).
 **Test:** pick apps, kill and reopen Stad, the selection is still there.
 

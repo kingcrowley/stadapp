@@ -2,6 +2,16 @@
 
 Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
+## Slice 1.1 — Block list (PR #2)
+
+- App picker: searchable (case- and accent-insensitive) list of launchable apps with icons and tick boxes; ticks save immediately. Home shows "N apps blocked" and **Choose apps**.
+- `core/`: `AppEntry`, `BlockList`, `PickerRow`, `BlockListRules` (`setBlocked`, `sanitize`, `shouldPersistSanitized`, `effective`, `blockedCount`, `pickerRows`, `ALWAYS_PROTECTED`). The list is read-only while locked (switches on in 1.2).
+- `data/`: `BlockListRepository` with an atomic `update`, backed by one app-wide Preferences DataStore; corrupt file reads as empty.
+- `service/`: `InstalledApps`, `ProtectedPackages` (Stad, system UI, every home app, dialer, SMS app, Settings), `AppIcons` (cached 48dp bitmaps).
+- Protection is applied on read, never written to storage; uninstalled apps are cleaned up only while unlocked and never from an empty app query.
+- Manifest `<queries>` for LAUNCHER, HOME, DIAL, SENDTO, SETTINGS (no `QUERY_ALL_PACKAGES`); `dataExtractionRules` keeps settings off cloud backup and device transfer.
+- **Unit tests:** 32 (+27: `BlockListRulesTest` 19, `BlockListTest` 3, `DataStoreBlockListRepositoryTest` 5).
+
 ## Phase 0 — Foundation (PR #1, merged 2026-11-17)
 
 - Repository set up: GPL-3.0 license, README, `.gitignore`, PR template.

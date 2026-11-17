@@ -1,0 +1,69 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  claude-review:
+    # Fork PRs get no secrets and a read-only token, so this job can't run for them.
+    # Maintainers review fork PRs by commenting @claude (claude.yml) or via CodeRabbit.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      HAS_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+    permissions:
+      contents: read
+      pull-requests: write  # the OIDC-minted app token is scoped to these perms; write lets Claude post the review
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        id: claude-review
+        # Skip cleanly (instead of failing auth) until the repo secret is added.
+        if: env.HAS_CLAUDE_TOKEN == 'true'
+        uses: anthropics/claude-code-action@cc98b3ae241b0fcfb6a42a2690751afffecb4452 # v1
+        env:
+          # `gh` in the Bash tool needs a token to post; the default workflow
+          # token (scoped by the `permissions:` block above → pull-requests:
+          # write) lets `gh pr comment` post as github-actions[bot].
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # History (carried over from the Unnamed-RPG repo): the code-review
+          # plugin posts nothing (#1087). A prior direct-prompt config posted
+          # nothing either — runs finished "success" but with a high
+          # permission_denials_count and 0 comments. Two failure modes, both
+          # from an over-narrow allowlist: (1) the agent burns turns on denied
+          # read/explore commands (git/cat/sed/…) and hits the turn cap before
+          # posting; (2) composing the summary inline (`gh pr comment --body
+          # "$(cat <<EOF …)"`) is denied because the permission check sees the
+          # nested `cat`/heredoc, so the post itself never runs.
+          # Fix: allow read-only explore tools so exploration doesn't thrash,
+          # add Write, and post via `gh pr comment --body-file` (no shell
+          # quoting/substitution to trip the allowlist). Give turn headroom.
+          # Inline comments stay best-effort via the MCP tool.
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} for
+            correctness, likely bugs, security issues, and clear best-practice
+            violations. Read the change with `gh pr diff` / `gh pr view` and
+            open files with Read/Grep as needed.
+
+            You MUST post your review as a single PR comment. Do NOT try to
+            compose the body inline with heredocs or "$(...)" — that is unreliable
+            under the tool allowlist. Instead:
+              1. Write the full review to a file named review.md (use the Write tool).
+              2. Post it verbatim with:
+                   gh pr comment ${{ github.event.pull_request.number }} --body-file review.md
+            Lead with an overall verdict, then the most important findings grouped
+            by severity; if nothing needs changing, say the PR looks good. If the
+            inline-comment tool is available you may also add inline comments, but
+            the summary comment is required either way.
+          claude_args: |
+            --max-turns 60 --permission-mode default --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(sed:*),Bash(grep:*),Bash(rg:*),Bash(find:*),Bash(echo:*),Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment"

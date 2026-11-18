@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Covers a blocked app with Stad's block screen while Stad is locked.
@@ -36,25 +35,25 @@ class BlockerAccessibilityService : AccessibilityService() {
     private val guard = RelaunchGuard()
     private val protectedPackages by lazy { ProtectedPackages(this) }
 
-    // All touched on the main thread only.
+    // All touched on the main thread only. The foreground package is never stored or logged.
     private var lockState = LockState.Unlocked
     private var blockList = BlockList()
-    private var lastCompleteProtection: Set<String>? = null
     private var lastForeground: String? = null
+    private var retriesLeft = 0
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         scope.launch {
-            withContext(Dispatchers.IO) { protectedPackages.current() }.let(::rememberProtection)
-        }
-        scope.launch {
-            DataStoreBlockListRepository(stadSettings).blockList.collect { blockList = it }
+            DataStoreBlockListRepository(stadSettings).blockList.collect {
+                blockList = it
+                lastForeground?.let(::evaluate)
+            }
         }
         scope.launch {
             LockStateRepository(stadSettings).lockState.collect { state ->
                 val justLocked = !lockState.isLocked && state.isLocked
                 lockState = state
-                // Locking while a blocked app is open blocks it at once.
+                // Locking while a blocked app is open blocks it at once, if Stad has seen it.
                 if (justLocked) lastForeground?.let(::evaluate)
             }
         }
@@ -68,44 +67,60 @@ class BlockerAccessibilityService : AccessibilityService() {
         // mustn't send the user home while they're in another app.
         if (!packageManager.activityExists(ComponentName(pkg, cls))) return
         lastForeground = pkg
+        retriesLeft = MAX_RETRIES
         evaluate(pkg)
     }
 
     private fun evaluate(pkg: String) {
-        if (decide(pkg) !is Decision.Block) {
+        handler.removeCallbacks(retry)
+        // Cheap pre-check: only a listed app while locked can be blocked.
+        if (!lockState.isLocked || pkg !in blockList) {
             guard.onAllowed(pkg)
             return
         }
-        // Blocks are rare, so re-read protection now: a launcher, dialer, SMS app or keyboard
-        // the user just switched to must never be blocked.
-        rememberProtection(protectedPackages.current())
-        if (decide(pkg) !is Decision.Block) return
+        // Read protection fresh for every candidate (they're rare), so a launcher, dialer, SMS app
+        // or keyboard the user just switched to is never blocked, and one that stopped being
+        // protected is blocked again.
+        val protection = protectedPackages.current()
+        if (!protection.complete) {
+            // Not sure this app isn't protected, so don't block it; try again shortly.
+            handler.postDelayed(retry, RETRY_DELAY_MS)
+            return
+        }
+        if (BlockDecision.decide(pkg, lockState, blockList, protection.packages) !is Decision.Block) {
+            guard.onAllowed(pkg)
+            return
+        }
         if (!guard.shouldLaunch(pkg, SystemClock.elapsedRealtime())) return
         block(pkg)
     }
 
-    private fun decide(pkg: String) = BlockDecision.decide(pkg, lockState, blockList, lastCompleteProtection)
-
-    /** Keeps the last complete protected set; an incomplete one only ever adds to it. */
-    private fun rememberProtection(result: ProtectedPackages.Result) {
-        lastCompleteProtection = when {
-            result.complete -> result.packages
-            else -> lastCompleteProtection?.plus(result.packages)
-        }
+    /** Re-checks the app Stad last saw, e.g. after an unsure protection lookup or a failed block. */
+    private val retry = Runnable {
+        if (retriesLeft-- > 0) lastForeground?.let(::evaluate)
     }
 
     private fun block(pkg: String) {
-        // Home first, so the app is off-screen even if the block screen is slow or refused.
-        performGlobalAction(GLOBAL_ACTION_HOME)
+        // Home first, so the app is off-screen even if the block screen is slow. If Home was
+        // refused, show the block screen straight away instead.
+        val wentHome = performGlobalAction(GLOBAL_ACTION_HOME)
         // Let the home screen settle before starting the block screen on top of it, so the
-        // launcher doesn't stop (and so finish) the block screen straight away.
-        handler.postDelayed({
-            if (decide(pkg) !is Decision.Block) return@postDelayed // unlocked meanwhile
-            val intent = Intent(this, BlockedActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                .putExtra(BlockedActivity.EXTRA_PACKAGE, pkg)
+        // launcher doesn't stop (and so close) the block screen straight away.
+        handler.postDelayed({ showBlockScreen(pkg) }, if (wentHome) BLOCK_SCREEN_DELAY_MS else 0)
+        // If neither worked, the blocked app is still the last one seen: check it again.
+        handler.postDelayed({ if (lastForeground == pkg) retry.run() }, RETRY_DELAY_MS)
+    }
+
+    private fun showBlockScreen(pkg: String) {
+        if (!lockState.isLocked || pkg !in blockList) return // unlocked meanwhile
+        val intent = Intent(this, BlockedActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            .putExtra(BlockedActivity.EXTRA_PACKAGE, pkg)
+        try {
             startActivity(intent)
-        }, BLOCK_SCREEN_DELAY_MS)
+        } catch (_: RuntimeException) {
+            // Refused by the system; the follow-up check in block() tries again.
+        }
     }
 
     override fun onInterrupt() = Unit
@@ -118,5 +133,7 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private companion object {
         const val BLOCK_SCREEN_DELAY_MS = 250L
+        const val RETRY_DELAY_MS = 1_500L
+        const val MAX_RETRIES = 5
     }
 }

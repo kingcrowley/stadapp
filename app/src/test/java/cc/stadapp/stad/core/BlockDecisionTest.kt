@@ -31,8 +31,9 @@ class BlockDecisionTest {
     }
 
     @Test
-    fun protectedAppIsNeverBlocked() {
-        assertEquals(Decision.Allow, decide("com.android.launcher3"))
+    fun protectedAppIsNeverBlockedEvenIfListed() {
+        val launcher = "com.android.launcher3"
+        assertEquals(Decision.Allow, BlockDecision.decide(launcher, LockState.Locked, BlockList(setOf(launcher)), protected))
     }
 
     @Test

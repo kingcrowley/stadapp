@@ -2,10 +2,12 @@
 <!--
     Window-state changes only. No window content (canRetrieveWindowContent="false") and not an
     isAccessibilityTool: Stad reads the foreground app's package and activity name, nothing else.
+    notificationTimeout is 0 so a later popup event can't replace an app's event; the service
+    drops duplicate block launches itself (RelaunchGuard).
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="false"
     android:description="@string/accessibility_service_description"
-    android:notificationTimeout="100" />
+    android:notificationTimeout="0" />

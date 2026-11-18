@@ -40,6 +40,8 @@ fun HomeScreen(
     blockedCount: Int = 0,
     serviceEnabled: Boolean = false,
     protectionUnknown: Boolean = false,
+    lockFailed: Boolean = false,
+    settingsUnavailable: Boolean = false,
     showDebugLock: Boolean = false,
     onChooseApps: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit = {},
@@ -85,9 +87,13 @@ fun HomeScreen(
                 modifier = Modifier.padding(top = 24.dp),
             )
 
-            if (protectionUnknown) {
+            listOfNotNull(
+                R.string.settings_unavailable.takeIf { settingsUnavailable },
+                R.string.protection_unknown_home.takeIf { protectionUnknown },
+                R.string.lock_failed.takeIf { lockFailed },
+            ).forEach { warning ->
                 Text(
-                    text = stringResource(R.string.protection_unknown_home),
+                    text = stringResource(warning),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 16.dp),

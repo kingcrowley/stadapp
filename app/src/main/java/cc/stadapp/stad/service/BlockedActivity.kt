@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import cc.stadapp.stad.BuildConfig
 import cc.stadapp.stad.R
 import cc.stadapp.stad.ui.theme.StadTheme
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +88,7 @@ private fun BlockedScreen(label: String, icon: android.graphics.Bitmap?, onGoHom
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -100,7 +104,8 @@ private fun BlockedScreen(label: String, icon: android.graphics.Bitmap?, onGoHom
                 modifier = Modifier.padding(top = 16.dp),
             )
             Text(
-                text = stringResource(R.string.blocked_message),
+                // TODO(slice1.3-remove-debug-toggle): tag-only message once NFC lands.
+                text = stringResource(if (BuildConfig.DEBUG) R.string.blocked_message_debug else R.string.blocked_message),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),

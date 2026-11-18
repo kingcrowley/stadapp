@@ -35,6 +35,8 @@ data class BlockListUiState(
     val lockState: LockState = LockState.Unlocked,
     val query: String = "",
     val problem: BlockListProblem = BlockListProblem.None,
+    /** Protected apps couldn't be confirmed. Shown on Home whatever [problem] says. */
+    val protectionUnknown: Boolean = false,
 )
 
 /** What the device told us on the last refresh. Published as one value so it can't be mixed. */
@@ -61,6 +63,10 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     private val saveFailed = combine(editFailed, cleanUpFailed) { edit, cleanUp -> edit || cleanUp }
     private var refreshJob: Job? = null
 
+    private val _lockFailed = MutableStateFlow(false)
+    /** The debug lock button's last write failed. Kept apart from list-edit failures. */
+    val lockFailed: StateFlow<Boolean> = _lockFailed
+
     private val lockRepository = LockStateRepository(app.stadSettings)
 
     // Shared with the blocking service. Edits are also refused inside the write while locked, so
@@ -79,6 +85,7 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
                 editable = BlockListRules.canEdit(lock, complete),
                 lockState = lock,
                 query = q,
+                protectionUnknown = found != null && !complete,
                 problem = when {
                     failed -> BlockListProblem.SaveFailed
                     found != null && !complete -> BlockListProblem.ProtectionUnknown
@@ -136,10 +143,11 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     /** Debug builds only: the stand-in for an NFC tap until slice 1.3. TODO(slice1.3-remove-debug-toggle) */
     fun setLockedForDebug(state: LockState) {
         viewModelScope.launch {
-            try {
+            _lockFailed.value = try {
                 withContext(Dispatchers.IO) { lockRepository.set(state) }
+                false
             } catch (_: IOException) {
-                editFailed.value = true
+                true
             }
         }
     }

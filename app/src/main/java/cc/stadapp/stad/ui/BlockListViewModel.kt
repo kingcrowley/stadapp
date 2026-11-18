@@ -54,7 +54,10 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     // Null until the first refresh: nothing is editable before protection is known.
     private val discovery = MutableStateFlow<Discovery?>(null)
     private val query = MutableStateFlow("")
-    private val saveFailed = MutableStateFlow(false)
+    // Each kind of write keeps its own failure, so a later successful toggle can't hide a failed clean-up.
+    private val editFailed = MutableStateFlow(false)
+    private val cleanUpFailed = MutableStateFlow(false)
+    private val saveFailed = combine(editFailed, cleanUpFailed) { edit, cleanUp -> edit || cleanUp }
     private var refreshJob: Job? = null
 
     // TODO(slice1.2-lock-state): driven by the debug lock toggle in 1.2, persisted in 2.1.
@@ -91,14 +94,19 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
                 Discovery(installedApps.launchableApps(), result.packages, result.complete)
             }
             discovery.value = found
-            save {
-                repository.update { saved ->
-                    val sanitized = BlockListRules.sanitize(saved, installedApps::isInstalled)
-                    if (BlockListRules.shouldPersistSanitized(saved, sanitized, lockState.value, found.apps.size)) {
-                        sanitized
-                    } else {
-                        saved
-                    }
+            cleanUp(found)
+        }
+    }
+
+    /** Drops uninstalled apps from the stored list. A failure stays flagged until a clean-up succeeds. */
+    private suspend fun cleanUp(found: Discovery) {
+        cleanUpFailed.value = !save {
+            repository.update { saved ->
+                val sanitized = BlockListRules.sanitize(saved, installedApps::isInstalled)
+                if (BlockListRules.shouldPersistSanitized(saved, sanitized, lockState.value, found.apps.size)) {
+                    sanitized
+                } else {
+                    saved
                 }
             }
         }
@@ -107,7 +115,7 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     fun setBlocked(packageName: String, blocked: Boolean) {
         val found = discovery.value ?: return
         viewModelScope.launch {
-            save {
+            editFailed.value = !save {
                 repository.update {
                     BlockListRules.setBlocked(
                         it, packageName, blocked, lockState.value,
@@ -115,6 +123,8 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
             }
+            // Storage works again, so retry a clean-up that failed earlier.
+            if (!editFailed.value && cleanUpFailed.value) cleanUp(found)
         }
     }
 
@@ -122,13 +132,12 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
         query.value = text
     }
 
-    /** Runs a write. On failure the stored list is unchanged; the UI shows a warning until a write succeeds. */
-    private suspend fun save(write: suspend () -> Unit) {
+    /** Runs a write and returns whether it succeeded. On failure the stored list is unchanged. */
+    private suspend fun save(write: suspend () -> Unit): Boolean =
         try {
             withContext(Dispatchers.IO) { write() }
-            saveFailed.value = false
+            true
         } catch (_: IOException) {
-            saveFailed.value = true
+            false
         }
-    }
 }

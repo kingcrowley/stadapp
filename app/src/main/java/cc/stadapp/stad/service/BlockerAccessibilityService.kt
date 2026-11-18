@@ -92,7 +92,12 @@ class BlockerAccessibilityService : AccessibilityService() {
             guard.onAllowed(pkg)
             return
         }
-        if (!guard.shouldLaunch(pkg, SystemClock.elapsedRealtime())) return
+        if (!guard.shouldLaunch(pkg, SystemClock.elapsedRealtime())) {
+            // Just blocked: don't launch again yet, but keep a check pending in case that block
+            // didn't take (the removeCallbacks above may have dropped it).
+            scheduleRetry()
+            return
+        }
         block(pkg)
     }
 

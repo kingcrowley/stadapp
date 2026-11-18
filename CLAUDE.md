@@ -50,4 +50,4 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 | 1.1 — Block list | Merged | 35 | PR #2, `Phase1-Slice1-Complete` |
 | 1.2 — Blocking engine | Merged | 65 | PR #3, `Phase1-Slice2-Complete` |
 
-**Next up:** Slice 1.3 — NFC pairing + lock/unlock (replaces the debug lock button). Slice 1.2 spec: `docs/superpowers/specs/2026-11-18-slice1.2-blocking-engine-design.md`; plan: `docs/superpowers/plans/2026-11-18-slice1.2-blocking-engine.md`.
+**Next up:** Slice 1.3 — NFC pairing + lock/unlock. Spec: `docs/superpowers/specs/2026-11-18-slice1.3-nfc-lock-design.md`; plan: `docs/superpowers/plans/2026-11-18-slice1.3-nfc-lock.md`.

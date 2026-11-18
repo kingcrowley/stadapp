@@ -12,6 +12,7 @@ import cc.stadapp.stad.core.BlockList
 import cc.stadapp.stad.core.Decision
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.RelaunchGuard
+import cc.stadapp.stad.core.RetrySchedule
 import cc.stadapp.stad.data.DataStoreBlockListRepository
 import cc.stadapp.stad.data.LockStateRepository
 import cc.stadapp.stad.data.stadSettings
@@ -33,13 +34,13 @@ class BlockerAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val handler = Handler(Looper.getMainLooper())
     private val guard = RelaunchGuard()
+    private val retries = RetrySchedule()
     private val protectedPackages by lazy { ProtectedPackages(this) }
 
     // All touched on the main thread only. The foreground package is never stored or logged.
     private var lockState = LockState.Unlocked
     private var blockList = BlockList()
     private var lastForeground: String? = null
-    private var retriesLeft = 0
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -67,7 +68,7 @@ class BlockerAccessibilityService : AccessibilityService() {
         // mustn't send the user home while they're in another app.
         if (!packageManager.activityExists(ComponentName(pkg, cls))) return
         lastForeground = pkg
-        retriesLeft = MAX_RETRIES
+        retries.reset()
         evaluate(pkg)
     }
 
@@ -84,7 +85,7 @@ class BlockerAccessibilityService : AccessibilityService() {
         val protection = protectedPackages.current()
         if (!protection.complete) {
             // Not sure this app isn't protected, so don't block it; try again shortly.
-            handler.postDelayed(retry, RETRY_DELAY_MS)
+            scheduleRetry()
             return
         }
         if (BlockDecision.decide(pkg, lockState, blockList, protection.packages) !is Decision.Block) {
@@ -96,8 +97,13 @@ class BlockerAccessibilityService : AccessibilityService() {
     }
 
     /** Re-checks the app Stad last saw, e.g. after an unsure protection lookup or a failed block. */
-    private val retry = Runnable {
-        if (retriesLeft-- > 0) lastForeground?.let(::evaluate)
+    private val retry = Runnable { lastForeground?.let(::evaluate) }
+
+    // Fast at first, then slow but never-ending: a blocked app is never left usable because the
+    // retries ran out. It stops as soon as an allowed app is the one in front.
+    private fun scheduleRetry() {
+        handler.removeCallbacks(retry)
+        handler.postDelayed(retry, retries.nextDelayMs())
     }
 
     private fun block(pkg: String) {
@@ -107,8 +113,8 @@ class BlockerAccessibilityService : AccessibilityService() {
         // Let the home screen settle before starting the block screen on top of it, so the
         // launcher doesn't stop (and so close) the block screen straight away.
         handler.postDelayed({ showBlockScreen(pkg) }, if (wentHome) BLOCK_SCREEN_DELAY_MS else 0)
-        // If neither worked, the blocked app is still the last one seen: check it again.
-        handler.postDelayed({ if (lastForeground == pkg) retry.run() }, RETRY_DELAY_MS)
+        // If neither worked, the blocked app is still the last one seen and gets checked again.
+        scheduleRetry()
     }
 
     private fun showBlockScreen(pkg: String) {
@@ -137,7 +143,5 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private companion object {
         const val BLOCK_SCREEN_DELAY_MS = 250L
-        const val RETRY_DELAY_MS = 1_500L
-        const val MAX_RETRIES = 5
     }
 }

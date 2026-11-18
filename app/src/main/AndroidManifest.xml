@@ -75,6 +75,8 @@
             the DEFAULT category, or Android opens MainActivity without the tag instead. A MIME
             record, not a web link: Android 16+ sends http(s) tags to ACTION_VIEW instead.
             Exported by necessity; see TagActivity.
+            TODO(target-sdk-37): Android 17 requires android:permission=
+            "android.permission.DISPATCH_NFC_MESSAGE" here once targetSdk is 37 or higher.
         -->
         <activity
             android:name=".service.TagActivity"

@@ -27,7 +27,7 @@ Pick apps from the installed launchable apps; the selection persists (DataStore)
 AccessibilityService + block screen. A temporary debug-only "Lock now / Unlock" toggle drives `LockState` so blocking is testable **before tags arrive**.
 **Test:** lock with the debug toggle, open a blocked app, see the block screen; unlock, it opens normally.
 
-### 1.3 — NFC lock and unlock
+### 1.3 — NFC lock and unlock (in review)
 Pair a tag by UID; tapping the paired tag toggles `LockState`; other tags are ignored. Debug toggle removed from release builds.
 **Milestone:** tap the tag → Instagram is blocked; tap again → it opens.
 

@@ -11,10 +11,11 @@
 
 | Screen | Slice | Contents |
 |--------|-------|----------|
-| Home | 0 → 1.3 | Lock state, number of blocked apps, entry points to the block list and tag pairing |
+| Home | 0 → 1.3 | Lock state, number of blocked apps, blocking-service card, tag card (pair / re-pair; while locked, explains the lost-tag route), NFC off / missing card, entry to the block list |
 | App picker | 1.1 | Searchable list of launchable apps with checkboxes. Disabled while locked |
 | Block screen | 1.2 | "X is blocked by Stad. Tap your tag to unlock." with the app's icon and **Go to home screen**; Back also goes home. Sneaky-look button in 2.3 |
-| Pair tag | 1.3 | "Hold your tag to the back of the phone." Shows success and lets you re-pair (unlocked only) |
+| Pair tag | 1.3 | Dialog: "Hold your tag to the back of the phone." → "Tag written. Tap it once more to check it." → "Tag paired." Errors for a tag that can't be written, a random-ID tag, a moved tag and a different second tag. Re-pairing replaces the old tag (unlocked only) |
+| Tap feedback | 1.3 | Tapping the paired tag anywhere: one buzz + "Locked" (with a warning if no apps are chosen or the blocking service is off), two buzzes + "Unlocked". Another tag: three buzzes + "That's not your Stad tag" |
 | Settings | 2.3 | Sneaky look length and cooldown |
 | Onboarding | 3.1 | Explains the Accessibility permission (Play's prominent disclosure), NFC check, first pairing |
 

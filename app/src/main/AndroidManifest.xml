@@ -71,9 +71,10 @@
 
         <!--
             Started by Android when a Stad tag is tapped anywhere. Invisible: it toggles the lock
-            and closes. The filter must match the tag's first record exactly
-            (core/StadTagUri: https://stadapp.cc/t), including the DEFAULT category, or Android
-            opens MainActivity without the tag instead. Exported by necessity; see TagActivity.
+            and closes. The filter must match the tag's first record (core/StadTagMime), including
+            the DEFAULT category, or Android opens MainActivity without the tag instead. A MIME
+            record, not a web link: Android 16+ sends http(s) tags to ACTION_VIEW instead.
+            Exported by necessity; see TagActivity.
         -->
         <activity
             android:name=".service.TagActivity"
@@ -85,10 +86,7 @@
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data
-                    android:host="stadapp.cc"
-                    android:path="/t"
-                    android:scheme="https" />
+                <data android:mimeType="application/vnd.cc.stadapp.stad" />
             </intent-filter>
         </activity>
 

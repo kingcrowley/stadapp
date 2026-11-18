@@ -31,4 +31,12 @@ class TapDebounceTest {
         assertTrue(debounce.accept("04A1", 5_000))
         assertTrue(debounce.accept("04A1", 1_000))
     }
+
+    @Test
+    fun anotherTagInBetweenDoesNotResetTheWindow() {
+        assertTrue(debounce.accept("04A1", 0))
+        assertTrue(debounce.accept("0499", 100))
+        assertFalse(debounce.accept("04A1", 200))
+        assertTrue(debounce.accept("04A1", 1_500))
+    }
 }

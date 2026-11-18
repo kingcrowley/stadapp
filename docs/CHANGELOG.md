@@ -5,12 +5,12 @@ Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 ## Slice 1.3 — NFC lock and unlock (PR #4, in review)
 
 - Pair a tag from Home (two taps: write, then check), then tap it anywhere to lock and tap again to unlock. Other tags do nothing but say "That's not your Stad tag". A buzz pattern and a toast confirm each tap. The block screen closes itself on unlock. The debug Lock / Unlock button stays, in debug builds only.
-- `core/`: `TagId` (UID → uppercase hex), `TagAction.decide`, `StadTagUri`, `PairingCheck` (refuses random UIDs; second tap must match), `PairingFlow` (pairing steps and errors, tag I/O passed in), `TagFeedback` (message + haptic per outcome), `TapDebounce` (same tag within 1.5 s ignored).
+- `core/`: `TagId` (UID → uppercase hex), `TagAction.decide`, `StadTagMime` (the tag's record type; a MIME record, since Android 16+ sends web-link tags to the browser path), `PairingCheck` (refuses random UIDs; second tap must match), `PairingFlow` (pairing steps and errors, tag I/O passed in), `TagFeedback` (message + haptic per outcome), `TapDebounce` (same tag within 1.5 s ignored, per tag).
 - `data/`: `TagRepository` (`paired_tag` key; `pair` refused while locked; `tap` decides and writes the lock in one edit, a failed write leaves the lock unchanged).
-- `service/`: `TagActivity` (translucent, exported only for the exact Stad URI filter), `TagTaps`, `TagWriter` (URI record then AAR; formats blank tags; checks writable and size), `Haptics`. The blocking service ignores `TagActivity`.
+- `service/`: `TagActivity` (translucent, exported only for the Stad MIME-type filter), `TagTaps`, `TagWriter` (Stad MIME record then AAR; formats blank tags; checks writable and size), `Haptics`. The blocking service ignores `TagActivity`.
 - Home: tag card (pair / re-pair, disabled while locked with the lost-tag explanation), NFC off / missing card with a way to NFC settings, pairing dialog. `MainActivity` reads tags in reader mode while open.
 - Manifest: `NFC`, `VIBRATE`, NFC hardware required.
-- **Unit tests:** 113 (+48: `TagIdTest` 4, `TagActionTest` 5, `StadTagUriTest` 3, `PairingCheckTest` 5, `PairingFlowTest` 12, `TagFeedbackTest` 7, `TapDebounceTest` 4, `TagRepositoryTest` 8).
+- **Unit tests:** 114 (+49: `TagIdTest` 4, `TagActionTest` 5, `StadTagMimeTest` 3, `PairingCheckTest` 5, `PairingFlowTest` 12, `TagFeedbackTest` 7, `TapDebounceTest` 5, `TagRepositoryTest` 8).
 
 ## Slice 1.2 — Blocking engine (PR #3, merged 2026-11-18)
 

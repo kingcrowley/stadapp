@@ -36,6 +36,7 @@ import cc.stadapp.stad.ui.HomeScreen
 import cc.stadapp.stad.ui.NfcStatus
 import cc.stadapp.stad.ui.theme.StadTheme
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 
@@ -56,9 +57,12 @@ class MainActivity : ComponentActivity() {
     private var nfcSettingsUnavailable by mutableStateOf(false)
     private val tags by lazy { TagRepository(stadSettings) }
 
-    // The pairing dialog's state, or null when it's closed. Written from the NFC reader thread
-    // with compareAndSet, so a tap that lands after Cancel can't reopen it.
-    private val pairing = MutableStateFlow<PairingFlow.State?>(null)
+    // The pairing dialog's session, or null when it's closed. Written from the NFC reader thread
+    // with compareAndSet. Each opening gets a new id, so a slow write from a cancelled session
+    // can't land in the next one (their states alone can be equal).
+    private data class PairingSession(val id: Long, val state: PairingFlow.State)
+    private val pairing = MutableStateFlow<PairingSession?>(null)
+    private val pairingIds = AtomicLong()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 val state by blockList.state.collectAsStateWithLifecycle()
                 val lockFailed by blockList.lockFailed.collectAsStateWithLifecycle()
                 val tagPaired by blockList.tagPaired.collectAsStateWithLifecycle()
-                val pairingState by pairing.collectAsStateWithLifecycle()
+                val pairingSession by pairing.collectAsStateWithLifecycle()
                 // Two screens and a dialog, so plain state. TODO(slice2.x-navigation):
                 // navigation-compose if more screens arrive.
                 var showPicker by rememberSaveable { mutableStateOf(false) }
@@ -94,12 +98,14 @@ class MainActivity : ComponentActivity() {
                         tagPaired = tagPaired,
                         nfcStatus = nfcStatus,
                         nfcSettingsUnavailable = nfcSettingsUnavailable && nfcStatus == NfcStatus.Off,
-                        pairing = pairingState,
+                        pairing = pairingSession?.state,
                         showDebugLock = BuildConfig.DEBUG,
                         onChooseApps = { showPicker = true },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
                         onOpenNfcSettings = ::openNfcSettings,
-                        onPairTag = { pairing.value = PairingFlow.State() },
+                        onPairTag = {
+                            pairing.value = PairingSession(pairingIds.incrementAndGet(), PairingFlow.State())
+                        },
                         onClosePairing = { pairing.value = null },
                         onDebugLock = blockList::setLockedForDebug,
                     )
@@ -169,9 +175,13 @@ class MainActivity : ComponentActivity() {
         runOnUiThread { TagTaps.show(this, feedback) }
     }
 
-    private fun onPairingTap(current: PairingFlow.State, tag: Tag) {
-        var next = PairingFlow.onTap(current, tag.id, { TagWriter.write(tag) }, { TagWriter.verifyOrRewrite(tag) })
-        val saving = next.step as? PairingFlow.Step.Saving
+    private fun onPairingTap(current: PairingSession, tag: Tag) {
+        var next = current.copy(
+            state = PairingFlow.onTap(
+                current.state, tag.id, { TagWriter.write(tag) }, { TagWriter.verifyOrRewrite(tag) },
+            ),
+        )
+        val saving = next.state.step as? PairingFlow.Step.Saving
         if (saving != null) {
             if (!pairing.compareAndSet(current, next)) return // cancelled meanwhile
             val saved = try {
@@ -179,15 +189,15 @@ class MainActivity : ComponentActivity() {
             } catch (_: IOException) {
                 null
             }
-            val after = PairingFlow.afterSave(next, saved)
+            val after = next.copy(state = PairingFlow.afterSave(next.state, saved))
             if (!pairing.compareAndSet(next, after)) return
             next = after
         } else if (!pairing.compareAndSet(current, next)) {
             return
         }
         val haptic = when {
-            next.step is PairingFlow.Step.Done -> TagFeedback.Haptic.One
-            next.error != null -> TagFeedback.Haptic.Three
+            next.state.step is PairingFlow.Step.Done -> TagFeedback.Haptic.One
+            next.state.error != null -> TagFeedback.Haptic.Three
             else -> TagFeedback.Haptic.None
         }
         runOnUiThread { Haptics.play(this, haptic) }

@@ -2,7 +2,6 @@ package cc.stadapp.stad.service
 
 import android.content.Context
 import android.content.Intent
-import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
@@ -12,7 +11,7 @@ import android.widget.Toast
 import cc.stadapp.stad.R
 import cc.stadapp.stad.core.AccessibilityStatus
 import cc.stadapp.stad.core.BlockListRules
-import cc.stadapp.stad.core.StadTagUri
+import cc.stadapp.stad.core.StadTagMime
 import cc.stadapp.stad.core.TagFeedback
 import cc.stadapp.stad.core.TagId
 import cc.stadapp.stad.core.TagOutcome
@@ -71,16 +70,13 @@ object TagTaps {
 
     /**
      * The tag ID from a system NFC intent, or null unless it's a real Stad tap: the
-     * NDEF_DISCOVERED action, the Stad URI in the message, and a tag. Uses the tag's own ID,
+     * NDEF_DISCOVERED action, Stad's MIME type, and a tag. Uses the tag's own ID,
      * never the separate ID extra.
      */
     fun idFromIntent(intent: Intent?): String? {
         if (intent?.action != NfcAdapter.ACTION_NDEF_DISCOVERED) return null
-        val messages = intent.parcelables(NfcAdapter.EXTRA_NDEF_MESSAGES, NdefMessage::class.java)
-        val hasStadUri = messages.any { msg ->
-            msg.records.firstOrNull()?.toUri()?.toString().let(StadTagUri::matches)
-        }
-        if (!hasStadUri) return null
+        // Android sets the intent type from the first record, which is what the filter matched.
+        if (!StadTagMime.matches(intent.type)) return null
         val tag = intent.parcelable(NfcAdapter.EXTRA_TAG, Tag::class.java) ?: return null
         return TagId.fromBytes(tag.id)
     }
@@ -105,15 +101,9 @@ object TagTaps {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelableExtra(name, cls)
         } else {
+            // The legacy getter can't check the type, and TagActivity is exported: another app
+            // could put anything here, so check it rather than crash on a cast.
             @Suppress("DEPRECATION")
-            getParcelableExtra(name)
-        }
-
-    private fun <T : Parcelable> Intent.parcelables(name: String, cls: Class<T>): List<T> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getParcelableArrayExtra(name, cls)?.toList().orEmpty()
-        } else {
-            @Suppress("DEPRECATION")
-            getParcelableArrayExtra(name)?.filterIsInstance(cls).orEmpty()
+            getParcelableExtra<Parcelable>(name)?.takeIf(cls::isInstance)?.let(cls::cast)
         }
 }

@@ -7,21 +7,23 @@ import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.nfc.tech.NdefFormatable
 import cc.stadapp.stad.core.PairingFlow.WriteOutcome
-import cc.stadapp.stad.core.StadTagUri
+import cc.stadapp.stad.core.StadTagMime
 import java.io.IOException
 
 /**
- * Writes and checks Stad's record on a tag: the Stad URI first (Android dispatches on the first
- * record), then an Android Application Record so a tap starts Stad. Blocking I/O: call it from the
+ * Writes and checks Stad's record on a tag: a Stad MIME record first (Android dispatches on the
+ * first record), then an Android Application Record so a tap starts Stad. Blocking I/O: call it from the
  * NFC reader thread, never the main thread.
  */
 object TagWriter {
 
     private const val PACKAGE = "cc.stadapp.stad"
+    private const val FORMAT_VERSION: Byte = 1
 
     val message: NdefMessage
         get() = NdefMessage(
-            NdefRecord.createUri(StadTagUri.VALUE),
+            // One version byte, so a later format can be told apart.
+            NdefRecord.createMime(StadTagMime.TYPE, byteArrayOf(FORMAT_VERSION)),
             NdefRecord.createApplicationRecord(PACKAGE),
         )
 
@@ -76,7 +78,7 @@ object TagWriter {
             ndef.connect()
             val records = ndef.ndefMessage?.records ?: return false
             val expected = message.records
-            records.size >= 2 && StadTagUri.matches(records[0].toUri()?.toString()) && expected[1] in records
+            records.size >= 2 && records[0] == expected[0] && expected[1] in records
         } catch (_: IOException) {
             false
         } catch (_: FormatException) {

@@ -9,6 +9,7 @@ import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PickerRow
 import cc.stadapp.stad.data.DataStoreBlockListRepository
 import cc.stadapp.stad.data.LockStateRepository
+import cc.stadapp.stad.data.TagRepository
 import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.service.AppIcons
 import cc.stadapp.stad.service.InstalledApps
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -73,6 +75,11 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     // this cached value only drives the UI.
     private val lockState: StateFlow<LockState> =
         lockRepository.lockState.stateIn(viewModelScope, SharingStarted.Eagerly, LockState.Unlocked)
+
+    /** Whether a tag is paired. */
+    val tagPaired: StateFlow<Boolean> = TagRepository(app.stadSettings).pairedTag
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val state: StateFlow<BlockListUiState> =
         combine(repository.blockList, discovery, lockState, query, saveFailed) { list, found, lock, q, failed ->
@@ -140,7 +147,7 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Debug builds only: the stand-in for an NFC tap until slice 1.3. TODO(slice1.3-remove-debug-toggle) */
+    /** Debug builds only, by design: lets slices be tested without a tag. Release builds lock with the tag alone. */
     fun setLockedForDebug(state: LockState) {
         viewModelScope.launch {
             _lockFailed.value = try {

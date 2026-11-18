@@ -24,7 +24,7 @@
     <!-- Block screen -->
     <string name="blocked_title">%1$s is blocked by Stad</string>
     <string name="blocked_message">Tap your tag to unlock.</string>
-    <string name="blocked_message_debug">To unlock in this test build, open Stad and tap Unlock (debug).</string>
+    <string name="blocked_message_debug">Tap your tag to unlock. In this test build you can also open Stad and tap Unlock (debug).</string>
     <string name="go_home">Go to home screen</string>
     <string name="this_app">This app</string>
 
@@ -39,7 +39,41 @@
     <string name="disclosure_agree">Agree</string>
     <string name="disclosure_decline">No thanks</string>
 
-    <!-- Debug-only lock button. TODO(slice1.3-remove-debug-toggle) -->
+    <!-- Tag taps (toasts) -->
+    <string name="tap_locked">Locked. Your chosen apps are blocked.</string>
+    <string name="tap_locked_service_off">Locked, but blocking is off. Open Stad to turn it on.</string>
+    <string name="tap_locked_no_apps">Locked, but no apps are chosen yet.</string>
+    <string name="tap_unlocked">Unlocked.</string>
+    <string name="tap_not_your_tag">That\'s not your Stad tag.</string>
+    <string name="tap_not_paired">This tag isn\'t paired. Open Stad to pair it.</string>
+    <string name="tap_write_failed">Couldn\'t change the lock. Please tap again.</string>
+
+    <!-- Home: tag and NFC -->
+    <string name="tag_paired">Your tag is paired. Tap it to lock and unlock.</string>
+    <string name="tag_not_paired">No tag paired yet. Pair one to lock with it.</string>
+    <string name="pair_tag">Pair a tag</string>
+    <string name="repair_tag">Pair a different tag</string>
+    <string name="tag_locked_help">Unlock with your tag to change it. Lost your tag? Stad has no way round it: turning off Stad\'s Accessibility service in system settings stops blocking.</string>
+    <string name="nfc_off">NFC is off. Stad needs NFC to read your tag.</string>
+    <string name="nfc_missing">This phone can\'t read NFC tags, so Stad can\'t lock with a tag.</string>
+    <string name="nfc_settings_unavailable">Stad couldn\'t open NFC settings. Turn on NFC in Settings.</string>
+
+    <!-- Pairing dialog -->
+    <string name="pairing_title">Pair a tag</string>
+    <string name="pairing_first">Hold your tag to the back of the phone.</string>
+    <string name="pairing_confirm">Tag written. Tap it once more to check it.</string>
+    <string name="pairing_saving">Saving…</string>
+    <string name="pairing_done">Tag paired. Tap it anywhere to lock.</string>
+    <string name="pairing_error_random">This tag changes its ID every time, so Stad can\'t use it. Try another tag.</string>
+    <string name="pairing_error_cant_write">Stad can\'t write to this tag. Use an NTAG213, 215 or 216 sticker or card.</string>
+    <string name="pairing_error_write_failed">That didn\'t work. Hold the tag still and tap again.</string>
+    <string name="pairing_error_different">That was a different tag. Start again with one tag.</string>
+    <string name="pairing_error_locked">Stad is locked. Unlock first to change your tag.</string>
+    <string name="pairing_error_save_failed">The tag couldn\'t be saved. Tap it again.</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+
+    <!-- Debug-only lock button (debug builds only, by design) -->
     <string name="debug_lock">Lock now (debug)</string>
     <string name="debug_unlock">Unlock (debug)</string>
 </resources>

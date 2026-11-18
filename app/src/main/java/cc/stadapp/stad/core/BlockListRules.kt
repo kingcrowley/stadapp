@@ -10,8 +10,13 @@ const val STAD_PACKAGE = "cc.stadapp.stad"
 
 object BlockListRules {
 
-    /** The block list is read-only while locked; otherwise "unlock" would just be "edit the list". */
-    fun canEdit(lockState: LockState): Boolean = !lockState.isLocked
+    /**
+     * The block list is read-only while locked (otherwise "unlock" would just be "edit the list"),
+     * and while Stad couldn't confirm which apps are protected (otherwise a launcher or SMS app
+     * missed by a failed lookup could be picked).
+     */
+    fun canEdit(lockState: LockState, protectionComplete: Boolean = true): Boolean =
+        !lockState.isLocked && protectionComplete
 
     fun isBlockable(packageName: String, protectedPackages: Set<String>): Boolean =
         packageName.isNotBlank() && packageName !in protectedPackages
@@ -27,8 +32,9 @@ object BlockListRules {
         blocked: Boolean,
         lockState: LockState,
         protectedPackages: Set<String>,
+        protectionComplete: Boolean = true,
     ): BlockList {
-        if (!canEdit(lockState)) return list
+        if (!canEdit(lockState, protectionComplete)) return list
         if (blocked && !isBlockable(packageName, protectedPackages)) return list
         return list.with(packageName, blocked)
     }
@@ -78,9 +84,10 @@ object BlockListRules {
         protectedPackages: Set<String>,
         lockState: LockState,
         query: String = "",
+        protectionComplete: Boolean = true,
     ): List<PickerRow> {
         val needle = fold(query.trim())
-        val editable = canEdit(lockState)
+        val editable = canEdit(lockState, protectionComplete)
         return apps
             .asSequence()
             .distinctBy { it.packageName }

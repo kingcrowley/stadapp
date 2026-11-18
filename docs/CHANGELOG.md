@@ -10,7 +10,8 @@ Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 - `service/`: `InstalledApps`, `ProtectedPackages` (Stad, system UI, every home app, dialer, SMS app, Settings), `AppIcons` (cached 48dp bitmaps).
 - Protection is applied on read, never written to storage; uninstalled apps are cleaned up only while unlocked and never from an empty app query.
 - Manifest `<queries>` for LAUNCHER, HOME, DIAL, SENDTO, SETTINGS (no `QUERY_ALL_PACKAGES`); `dataExtractionRules` keeps settings off cloud backup and device transfer.
-- **Unit tests:** 32 (+27: `BlockListRulesTest` 19, `BlockListTest` 3, `DataStoreBlockListRepositoryTest` 5).
+- CodeRabbit fixes: the picker stays read-only until every protected-app lookup has succeeded; a failed save keeps the last saved list and shows a warning; a storage read error shows an empty list and keeps retrying with back-off; a newer refresh cancels an older one.
+- **Unit tests:** 35 (+30: `BlockListRulesTest` 20, `BlockListTest` 3, `DataStoreBlockListRepositoryTest` 7).
 
 ## Phase 0 — Foundation (PR #1, merged 2026-11-17)
 

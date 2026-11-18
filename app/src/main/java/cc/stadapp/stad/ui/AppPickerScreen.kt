@@ -50,12 +50,15 @@ fun AppPickerScreen(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.choose_apps)) }) },
     ) { innerPadding ->
         Column(Modifier.fillMaxSize().padding(innerPadding)) {
-            if (!state.editable) {
+            val banner = when {
+                state.lockState.isLocked -> R.string.list_locked_banner
+                state.problem == BlockListProblem.ProtectionUnknown -> R.string.protection_unknown_banner
+                state.problem == BlockListProblem.SaveFailed -> R.string.save_failed_banner
+                else -> null
+            }
+            if (banner != null) {
                 Surface(color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.list_locked_banner),
-                        modifier = Modifier.padding(16.dp),
-                    )
+                    Text(text = stringResource(banner), modifier = Modifier.padding(16.dp))
                 }
             }
             OutlinedTextField(

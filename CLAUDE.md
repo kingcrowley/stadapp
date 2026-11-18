@@ -47,6 +47,6 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 | Phase / Slice | State | Unit tests | Tag / PR |
 |---------------|-------|-----------|----------|
 | Phase 0 — Foundation | Merged | 5 | PR #1, `Phase0-Foundation-Complete` |
-| 1.1 — Block list | In review | 32 | PR #2 |
+| 1.1 — Block list | In review | 35 | PR #2 |
 
 **Next up:** Slice 1.2 — Blocking engine (AccessibilityService + block screen, debug lock toggle). Slice 1.1 spec: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`; plan: `docs/superpowers/plans/2026-11-17-slice1.1-block-list.md`.

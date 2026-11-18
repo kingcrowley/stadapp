@@ -11,21 +11,36 @@ import cc.stadapp.stad.core.BlockListRules
 /**
  * Packages that can never be blocked on this phone: the fixed floor in core (Stad, system UI,
  * the framework) plus every home-screen app, the default dialer and SMS app, and Settings.
- * Each lookup is independent, so one that fails or returns null doesn't drop the others.
+ * Each lookup is independent, so one that fails doesn't drop the others; but any failure marks
+ * the result incomplete, and the picker stays read-only until a later refresh succeeds.
  * Needs the matching `<queries>` entries in the manifest.
  *
  * TODO(slice1.2-emergency-apps): consider the OEM emergency/safety app as well.
  */
 class ProtectedPackages(private val context: Context) {
 
-    fun current(): Set<String> = buildSet {
-        addAll(BlockListRules.ALWAYS_PROTECTED)
-        add("com.android.settings")
-        addAll(safe { homeApps() })
-        addAll(safe { listOfNotNull(defaultDialer()) })
-        addAll(safe { listOfNotNull(defaultSms()) })
-        addAll(safe { listOfNotNull(resolve(Intent(Settings.ACTION_SETTINGS))) })
-        addAll(safe { listOfNotNull(resolve(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))) })
+    /** The protected set, and whether every lookup succeeded. */
+    data class Result(val packages: Set<String>, val complete: Boolean)
+
+    fun current(): Result {
+        var complete = true
+        val packages = buildSet {
+            addAll(BlockListRules.ALWAYS_PROTECTED)
+            add("com.android.settings")
+            fun lookup(block: () -> List<String>) {
+                try {
+                    addAll(block())
+                } catch (_: RuntimeException) {
+                    complete = false
+                }
+            }
+            lookup { homeApps() }
+            lookup { listOfNotNull(defaultDialer()) }
+            lookup { listOfNotNull(defaultSms()) }
+            lookup { listOfNotNull(resolve(Intent(Settings.ACTION_SETTINGS))) }
+            lookup { listOfNotNull(resolve(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))) }
+        }
+        return Result(packages, complete)
     }
 
     // Every home app, not just the default: with no default set, the "default" resolves to the
@@ -41,7 +56,4 @@ class ProtectedPackages(private val context: Context) {
     private fun defaultSms(): String? = Telephony.Sms.getDefaultSmsPackage(context)
 
     private fun resolve(intent: Intent): String? = context.packageManager.resolveActivityPackage(intent)
-
-    private inline fun safe(block: () -> List<String>): List<String> =
-        try { block() } catch (_: RuntimeException) { emptyList() }
 }

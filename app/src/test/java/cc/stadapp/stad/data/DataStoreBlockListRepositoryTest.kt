@@ -2,12 +2,24 @@ package cc.stadapp.stad.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import cc.stadapp.stad.core.BlockList
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import java.io.File
+import java.io.IOException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -52,6 +64,21 @@ class DataStoreBlockListRepositoryTest {
     }
 
     @Test
+    fun overlappingUpdatesAreNotLost() = runTest {
+        val repo = repo()
+        val jobs = (1..20).map { n -> launch { repo.update { it.with("p$n", true) } } }
+        jobs.joinAll()
+        assertEquals((1..20).map { "p$it" }.toSet(), repo.blockList.first().packages)
+    }
+
+    @Test
+    fun readErrorShowsEmptyThenRecovers() = runTest {
+        val store = FlakyReadStore(failuresBeforeSuccess = 1, initial = setOf("kept"))
+        val seen = DataStoreBlockListRepository(store).blockList.take(2).toList()
+        assertEquals(listOf(emptySet(), setOf("kept")), seen.map { it.packages })
+    }
+
+    @Test
     fun survivesANewInstanceOnTheSameFile() = runTest {
         val firstJob = Job()
         val firstScope = CoroutineScope(StandardTestDispatcher(testScheduler) + firstJob)
@@ -75,4 +102,25 @@ class DataStoreBlockListRepositoryTest {
         )
         assertTrue(repo.blockList.first().isEmpty())
     }
+}
+
+/** A DataStore whose reads throw IOException a set number of times before succeeding. */
+private class FlakyReadStore(
+    private var failuresBeforeSuccess: Int,
+    initial: Set<String>,
+) : DataStore<Preferences> {
+    private val state = MutableStateFlow(
+        mutablePreferencesOf(DataStoreBlockListRepository.BLOCKED_PACKAGES to initial) as Preferences
+    )
+
+    override val data: Flow<Preferences> = flow {
+        if (failuresBeforeSuccess > 0) {
+            failuresBeforeSuccess--
+            throw IOException("simulated read failure")
+        }
+        emitAll(state)
+    }
+
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences =
+        transform(state.value).also { state.value = it }
 }

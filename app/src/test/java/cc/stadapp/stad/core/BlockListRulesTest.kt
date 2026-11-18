@@ -19,6 +19,15 @@ class BlockListRulesTest {
     }
 
     @Test
+    fun cannotEditUntilProtectionIsConfirmed() {
+        assertFalse(BlockListRules.canEdit(unlocked, protectionComplete = false))
+        val result = BlockListRules.setBlocked(BlockList(), "x", true, unlocked, protectedPkgs, protectionComplete = false)
+        assertTrue(result.isEmpty())
+        val rows = BlockListRules.pickerRows(apps, BlockList(), protectedPkgs, unlocked, protectionComplete = false)
+        assertTrue(rows.none { it.enabled })
+    }
+
+    @Test
     fun protectedAndBlankPackagesAreNotBlockable() {
         assertFalse(BlockListRules.isBlockable("com.android.dialer", protectedPkgs))
         assertFalse(BlockListRules.isBlockable("", protectedPkgs))

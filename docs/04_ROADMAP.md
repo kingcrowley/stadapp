@@ -19,11 +19,11 @@ Build vertical slices. Every slice ends with something you can install on a phon
 
 ## Phase 1: Core loop
 
-### 1.1 — Block list (in review, PR #2)
+### 1.1 — Block list (merged, PR #2)
 Pick apps from the installed launchable apps; the selection persists (DataStore).
 **Test:** pick apps, kill and reopen Stad, the selection is still there.
 
-### 1.2 — Blocking engine
+### 1.2 — Blocking engine (merged, PR #3)
 AccessibilityService + block screen. A temporary debug-only "Lock now / Unlock" toggle drives `LockState` so blocking is testable **before tags arrive**.
 **Test:** lock with the debug toggle, open a blocked app, see the block screen; unlock, it opens normally.
 

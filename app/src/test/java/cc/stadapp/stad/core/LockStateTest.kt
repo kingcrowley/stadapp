@@ -31,4 +31,16 @@ class LockStateTest {
     fun toggleTwiceReturnsToStart() {
         LockState.entries.forEach { assertEquals(it, it.toggled().toggled()) }
     }
+
+    @Test
+    fun storedValueRoundTrips() {
+        LockState.entries.forEach { assertEquals(it, LockState.fromStored(it.name)) }
+    }
+
+    @Test
+    fun missingOrUnknownStoredValueIsUnlocked() {
+        assertEquals(LockState.Unlocked, LockState.fromStored(null))
+        assertEquals(LockState.Unlocked, LockState.fromStored("locked"))
+        assertEquals(LockState.Unlocked, LockState.fromStored("Bogus"))
+    }
 }

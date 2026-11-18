@@ -102,6 +102,13 @@ class BlockListRulesTest {
         assertTrue("android" in floor)
     }
 
+    @Test
+    fun alwaysProtectedCoversEmergencyApps() {
+        val floor = BlockListRules.ALWAYS_PROTECTED
+        assertTrue("com.android.phone" in floor)
+        assertTrue("com.android.emergency" in floor)
+    }
+
     private val apps = listOf(
         AppEntry("com.instagram.android", "Instagram"),
         AppEntry("com.zhiliaoapp.musically", "TikTok"),

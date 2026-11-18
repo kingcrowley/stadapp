@@ -40,11 +40,20 @@ object BlockListRules {
     }
 
     /**
-     * Packages that can never be blocked, whatever the device reports: Stad itself, the system UI
-     * and the Android framework. Device-specific ones (launchers, dialer, SMS, Settings) are added
-     * by the Android layer.
+     * Packages that can never be blocked, whatever the device reports: Stad itself, the system UI,
+     * the Android framework, the system phone app (it hosts the emergency dialer, which is separate
+     * from the default dialer) and known emergency/safety apps. Device-specific ones (launchers,
+     * dialer, SMS, keyboards, Settings) are added by the Android layer.
      */
-    val ALWAYS_PROTECTED: Set<String> = setOf(STAD_PACKAGE, "com.android.systemui", "android")
+    val ALWAYS_PROTECTED: Set<String> = setOf(
+        STAD_PACKAGE,
+        "com.android.systemui",
+        "android",
+        "com.android.phone",
+        "com.android.emergency",
+        "com.google.android.apps.safetyhub",
+        "com.sec.android.app.safetyassurance", // Samsung Emergency SOS
+    )
 
     /**
      * Drops packages that are confirmed uninstalled, and nothing else. Protection is applied when

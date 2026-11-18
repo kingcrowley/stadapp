@@ -13,7 +13,7 @@
 |--------|-------|----------|
 | Home | 0 → 1.3 | Lock state, number of blocked apps, entry points to the block list and tag pairing |
 | App picker | 1.1 | Searchable list of launchable apps with checkboxes. Disabled while locked |
-| Block screen | 1.2 | "Blocked by Stad. Tap your tag to unlock." Button back to home screen. Sneaky-look button in 2.3 |
+| Block screen | 1.2 | "X is blocked by Stad. Tap your tag to unlock." with the app's icon and **Go to home screen**; Back also goes home. Sneaky-look button in 2.3 |
 | Pair tag | 1.3 | "Hold your tag to the back of the phone." Shows success and lets you re-pair (unlocked only) |
 | Settings | 2.3 | Sneaky look length and cooldown |
 | Onboarding | 3.1 | Explains the Accessibility permission (Play's prominent disclosure), NFC check, first pairing |

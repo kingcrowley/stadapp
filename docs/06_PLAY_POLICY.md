@@ -11,8 +11,9 @@ App blockers may use an AccessibilityService, but it is a restricted use:
 | Declare the Accessibility use in the Play Console (permission declaration form) with a video of the feature | Declaration + screen recording of lock → block screen → unlock | 3.2 |
 | **Prominent disclosure** in-app before the user enables the service: what is accessed, why, and that it is required | Dedicated onboarding screen before sending the user to system settings; must be shown in normal app flow, not only in a privacy policy | 3.1 |
 | Affirmative user consent | "I understand" button on that screen; Stad never enables the service itself | 3.1 |
-| Not used to collect personal or sensitive data | The service reads only the foreground app's package name, uses it to decide whether to block, and never stores or logs it. Stad stores only the user's own settings on the device: the block list (1.1), the paired tag's UID (1.3), the lock state (2.1) and sneaky-look timings (2.3). Nothing leaves the device; no network permission | 1.2 |
-| Service config is minimal | `accessibility_service_config.xml` subscribes only to window-state changes, no `canRetrieveWindowContent` unless a slice proves it needs it | 1.2 |
+| Not used to collect personal or sensitive data | The service reads only the foreground app's package name and activity class, uses them to decide whether to block, keeps the last package in memory only, and never stores or logs it. Stad stores only the user's own settings on the device: the block list (1.1), the lock state (1.2), the paired tag's UID (1.3) and sneaky-look timings (2.3). Nothing leaves the device; no network permission | 1.2 |
+| Service config is minimal | `res/xml/blocker_accessibility_service.xml` subscribes only to window-state changes, `canRetrieveWindowContent="false"`, not an `isAccessibilityTool` | 1.2 |
+| Prominent disclosure before the permission | From 1.2: Home's **Turn on** opens a dialog saying what is accessed (the app on screen), why (to cover blocked apps) and that nothing is stored or sent, with an explicit **Agree**; dismissing it is not consent and doesn't open settings. Stad never turns the service on itself. 3.1 polishes this into onboarding | 1.2 / 3.1 |
 
 ## Other permissions
 

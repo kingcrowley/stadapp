@@ -64,3 +64,16 @@ internal fun PackageManager.applicationInfoCompat(packageName: String, flags: In
     } else {
         getApplicationInfo(packageName, flags)
     }
+
+/** Whether [component] is an activity: used to tell full-screen apps from dialogs and overlays. */
+internal fun PackageManager.activityExists(component: android.content.ComponentName): Boolean = try {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getActivityInfo(component, PackageManager.ComponentInfoFlags.of(0))
+    } else {
+        @Suppress("DEPRECATION")
+        getActivityInfo(component, 0)
+    }
+    true
+} catch (_: PackageManager.NameNotFoundException) {
+    false
+}

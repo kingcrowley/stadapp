@@ -6,16 +6,16 @@ import android.net.Uri
 import android.provider.Settings
 import android.provider.Telephony
 import android.telecom.TelecomManager
+import android.view.inputmethod.InputMethodManager
 import cc.stadapp.stad.core.BlockListRules
 
 /**
  * Packages that can never be blocked on this phone: the fixed floor in core (Stad, system UI,
- * the framework) plus every home-screen app, the default dialer and SMS app, and Settings.
+ * the framework, the phone app, emergency apps) plus every home-screen app, every enabled
+ * keyboard, the default dialer and SMS app, and Settings.
  * Each lookup is independent, so one that fails doesn't drop the others; but any failure marks
  * the result incomplete, and the picker stays read-only until a later refresh succeeds.
  * Needs the matching `<queries>` entries in the manifest.
- *
- * TODO(slice1.2-emergency-apps): consider the OEM emergency/safety app as well.
  */
 class ProtectedPackages(private val context: Context) {
 
@@ -35,6 +35,7 @@ class ProtectedPackages(private val context: Context) {
                 }
             }
             lookup { homeApps() }
+            lookup { keyboards() }
             lookup { listOfNotNull(defaultDialer()) }
             lookup { listOfNotNull(defaultSms()) }
             lookup { listOfNotNull(resolve(Intent(Settings.ACTION_SETTINGS))) }
@@ -49,6 +50,14 @@ class ProtectedPackages(private val context: Context) {
         context.packageManager
             .queryActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
             .map { it.activityInfo.packageName }
+
+    // Every enabled keyboard, not just the current one: blocking a keyboard would break typing
+    // everywhere, including in the apps that stay open.
+    private fun keyboards(): List<String> =
+        context.getSystemService(InputMethodManager::class.java)
+            ?.enabledInputMethodList
+            ?.map { it.packageName }
+            .orEmpty()
 
     private fun defaultDialer(): String? =
         context.getSystemService(TelecomManager::class.java)?.defaultDialerPackage

@@ -48,5 +48,6 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 |---------------|-------|-----------|----------|
 | Phase 0 — Foundation | Merged | 5 | PR #1, `Phase0-Foundation-Complete` |
 | 1.1 — Block list | In review | 35 | PR #2 |
+| 1.2 — Blocking engine | In review | 62 | PR #3 |
 
-**Next up:** Slice 1.2 — Blocking engine (AccessibilityService + block screen, debug lock toggle). Slice 1.1 spec: `docs/superpowers/specs/2026-11-17-slice1.1-block-list-design.md`; plan: `docs/superpowers/plans/2026-11-17-slice1.1-block-list.md`.
+**Next up:** Slice 1.3 — NFC pairing + lock/unlock (replaces the debug lock button). Slice 1.2 spec: `docs/superpowers/specs/2026-11-18-slice1.2-blocking-engine-design.md`; plan: `docs/superpowers/plans/2026-11-18-slice1.2-blocking-engine.md`.

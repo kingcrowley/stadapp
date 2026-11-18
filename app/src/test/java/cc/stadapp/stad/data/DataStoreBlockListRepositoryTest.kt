@@ -2,6 +2,7 @@ package cc.stadapp.stad.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import cc.stadapp.stad.core.BlockList
+import cc.stadapp.stad.core.LockState
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
@@ -69,6 +70,27 @@ class DataStoreBlockListRepositoryTest {
         val jobs = (1..20).map { n -> launch { repo.update { it.with("p$n", true) } } }
         jobs.joinAll()
         assertEquals((1..20).map { "p$it" }.toSet(), repo.blockList.first().packages)
+    }
+
+    @Test
+    fun editWhileLockedLeavesListUnchanged() = runTest {
+        val store = PreferenceDataStoreFactory.create(scope = backgroundScope, produceFile = ::file)
+        val repo = DataStoreBlockListRepository(store)
+        repo.update { it.with("kept", true) }
+        LockStateRepository(store).set(LockState.Locked)
+        repo.update { it.with("kept", false).with("added", true) }
+        assertEquals(setOf("kept"), repo.blockList.first().packages)
+    }
+
+    @Test
+    fun editAfterUnlockingApplies() = runTest {
+        val store = PreferenceDataStoreFactory.create(scope = backgroundScope, produceFile = ::file)
+        val repo = DataStoreBlockListRepository(store)
+        val lock = LockStateRepository(store)
+        lock.set(LockState.Locked)
+        lock.set(LockState.Unlocked)
+        repo.update { it.with("added", true) }
+        assertEquals(setOf("added"), repo.blockList.first().packages)
     }
 
     @Test

@@ -2,6 +2,15 @@
 
 Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
+## Slice 1.2 — Blocking engine
+
+- While locked, opening a blocked app sends you home and shows Stad's block screen ("X is blocked by Stad. Tap your tag to unlock." + **Go to home screen**). While unlocked nothing is blocked. A debug-only **Lock now / Unlock** button on Home stands in for NFC until 1.3.
+- `core/`: `BlockDecision` (locked + listed + not protected → block; never-confirmed protection → block nothing), `RelaunchGuard` (one block screen per burst of window events), `AccessibilityStatus` (parses the enabled-services setting, short and full forms), `LockState.fromStored`. Protected floor adds the system phone app and known emergency/safety apps.
+- `data/`: `LockStateRepository` on the shared DataStore (`lock_state`, fails open to Unlocked). Block-list edits read the lock inside the same write and refuse while locked; the 1.1 in-memory lock is gone.
+- `service/`: `BlockerAccessibilityService` (window-state events, activity windows only; re-reads protected apps on every block; goes Home first; re-checks the open app when the lock turns on; last package in memory only, never logged). `BlockedActivity` (not exported, no recents, own task, closes itself when it leaves the screen). `ProtectedPackages` adds every enabled keyboard.
+- Home: blocking-service card with a Play-compliant disclosure (Agree / No thanks) before Accessibility settings, a hint for the greyed-out switch on sideloaded installs, and a warning when protected apps couldn't be confirmed.
+- **Unit tests:** 62 (+27: `BlockDecisionTest` 8, `RelaunchGuardTest` 6, `AccessibilityStatusTest` 5, `LockStateTest` +2, `BlockListRulesTest` +1, `LockStateRepositoryTest` 3, `DataStoreBlockListRepositoryTest` +2).
+
 ## Slice 1.1 — Block list (PR #2)
 
 - App picker: searchable (case- and accent-insensitive) list of launchable apps with icons and tick boxes; ticks save immediately. Home shows "N apps blocked" and **Choose apps**.

@@ -8,6 +8,7 @@ import cc.stadapp.stad.core.BlockListRules
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PickerRow
 import cc.stadapp.stad.data.DataStoreBlockListRepository
+import cc.stadapp.stad.data.LockStateRepository
 import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.service.AppIcons
 import cc.stadapp.stad.service.InstalledApps
@@ -60,8 +61,12 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     private val saveFailed = combine(editFailed, cleanUpFailed) { edit, cleanUp -> edit || cleanUp }
     private var refreshJob: Job? = null
 
-    // TODO(slice1.2-lock-state): driven by the debug lock toggle in 1.2, persisted in 2.1.
-    private val lockState = MutableStateFlow(LockState.Unlocked)
+    private val lockRepository = LockStateRepository(app.stadSettings)
+
+    // Shared with the blocking service. Edits are also refused inside the write while locked, so
+    // this cached value only drives the UI.
+    private val lockState: StateFlow<LockState> =
+        lockRepository.lockState.stateIn(viewModelScope, SharingStarted.Eagerly, LockState.Unlocked)
 
     val state: StateFlow<BlockListUiState> =
         combine(repository.blockList, discovery, lockState, query, saveFailed) { list, found, lock, q, failed ->
@@ -125,6 +130,17 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
             }
             // Storage works again, so retry a clean-up that failed earlier.
             if (!editFailed.value && cleanUpFailed.value) cleanUp(found)
+        }
+    }
+
+    /** Debug builds only: the stand-in for an NFC tap until slice 1.3. TODO(slice1.3-remove-debug-toggle) */
+    fun setLockedForDebug(state: LockState) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { lockRepository.set(state) }
+            } catch (_: IOException) {
+                editFailed.value = true
+            }
         }
     }
 

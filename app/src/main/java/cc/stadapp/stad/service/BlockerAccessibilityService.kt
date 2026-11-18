@@ -113,6 +113,10 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private fun showBlockScreen(pkg: String) {
         if (!lockState.isLocked || pkg !in blockList) return // unlocked meanwhile
+        // If the user has moved on to another app since Home, don't cover it. The home screen
+        // Stad sent them to (or the blocked app, if Home was refused) still gets the block screen.
+        val now = lastForeground
+        if (now != null && now != pkg && protectedPackages.isHomeApp(now) == false) return
         val intent = Intent(this, BlockedActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             .putExtra(BlockedActivity.EXTRA_PACKAGE, pkg)

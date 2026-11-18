@@ -44,6 +44,14 @@ class ProtectedPackages(private val context: Context) {
         return Result(packages, complete)
     }
 
+    /** Whether [pkg] is a home-screen app, or null if the lookup failed. */
+    fun isHomeApp(pkg: String): Boolean? =
+        try {
+            pkg in homeApps()
+        } catch (_: RuntimeException) {
+            null
+        }
+
     // Every home app, not just the default: with no default set, the "default" resolves to the
     // system chooser, and the user can switch launchers at any time.
     private fun homeApps(): List<String> =

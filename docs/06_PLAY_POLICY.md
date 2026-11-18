@@ -18,7 +18,7 @@ App blockers may use an AccessibilityService, but it is a restricted use:
 
 | Permission | Play notes | Plan |
 |-----------|-----------|------|
-| `QUERY_ALL_PACKAGES` | Restricted; needs a declaration and justification | Avoid. Use a `<queries>` element for launcher activities instead (1.1) |
+| `QUERY_ALL_PACKAGES` | Restricted; needs a declaration and justification | Not used. Slice 1.1 declares `<queries>` for LAUNCHER, HOME, DIAL, SENDTO and SETTINGS intents only |
 | Device admin (uninstall protection) | Allowed but scrutinised; must be clearly disclosed and removable when unlocked | Decide in the 2.2 spec; disclose in onboarding |
 | `RECEIVE_BOOT_COMPLETED`, `NFC` | Normal permissions | — |
 

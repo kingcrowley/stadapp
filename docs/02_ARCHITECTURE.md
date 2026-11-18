@@ -9,7 +9,7 @@
 | Min / target SDK | 26 (Android 8.0) / 36 |
 | Build | Gradle (Kotlin DSL) + version catalog `gradle/libs.versions.toml` |
 | Tests | JUnit 4 on the JVM (`app/src/test`); instrumented tests added when a slice needs them |
-| Persistence | Jetpack DataStore (planned, slice 1.1) |
+| Persistence | Jetpack Preferences DataStore, one app-wide instance (`Context.stadSettings`) |
 
 ## Layers
 
@@ -28,7 +28,7 @@ Small enough to live here rather than in its own document.
 
 | Item | Type | Slice | Notes |
 |------|------|-------|-------|
-| Block list | `Set<String>` of package names | 1.1 | Launchable apps only; Stad itself, the launcher, Phone and Settings can never be blocked |
+| Block list | `BlockList` (`Set<String>` of package names), DataStore key `blocked_packages` | 1.1 | Launchable apps only. Protected apps (Stad, system UI, every home app, dialer, SMS, Settings) can't be added, and are ignored on read if they become protected later. Uninstalled apps are cleaned up only while unlocked |
 | Paired tag | `String` (hex tag UID) | 1.3 | Only this tag toggles the lock. Re-pairing requires being unlocked |
 | Lock state | `LockState` (`Unlocked` / `Locked`) | 0 / 1.2 | Persisted so it survives restarts (2.1) |
 | Sneaky look | last-used timestamp, peek length, cooldown | 2.3 | Times in minutes, configurable only while unlocked |
@@ -37,7 +37,9 @@ Small enough to live here rather than in its own document.
 
 | Component | Slice | Role |
 |-----------|-------|------|
-| `MainActivity` | 0 | Compose host |
+| `MainActivity` | 0 | Compose host; Home ↔ app picker; refreshes the app list on every `onStart` |
+| `InstalledApps`, `ProtectedPackages`, `AppIcons` | 1.1 | Read launchable apps, the never-blockable set, and cached icons from `PackageManager` |
+| `BlockListViewModel` | 1.1 | Combines stored list, apps, protected set, lock state and search into UI state via `BlockListRules` |
 | `BlockerAccessibilityService` | 1.2 | Watches `TYPE_WINDOW_STATE_CHANGED`; if the foreground package is blocked and state is `Locked`, shows the block screen |
 | `BlockedActivity` | 1.2 | Full-screen "Blocked, tap your tag to unlock" screen |
 | NFC handling | 1.3 | Pairing writes a Stad NDEF record (Stad URI plus an Android Application Record) to the tag, and an `NDEF_DISCOVERED` filter for that record lets a tap reach Stad from anywhere. `TAG_DISCOVERED` is only a last-resort intent, so Stad can't rely on it. Another app with a matching filter can still win dispatch or show a chooser. Foreground dispatch while Stad is open always works, and opening Stad before tapping is the documented fallback. Supported tags: NDEF-formattable NFC Forum Type 2 (e.g. NTAG213/215/216). The 1.3 spec settles the details. |
@@ -49,7 +51,7 @@ Small enough to live here rather than in its own document.
 | Permission | Why | Slice |
 |-----------|-----|-------|
 | `BIND_ACCESSIBILITY_SERVICE` (service) | Detect when a blocked app opens | 1.2 |
-| `QUERY_ALL_PACKAGES` or a `<queries>` launcher intent | List installed apps for the picker. Prefer `<queries>` (Play restricts `QUERY_ALL_PACKAGES`) | 1.1 |
+| No permission: `<queries>` for LAUNCHER, HOME, DIAL, SENDTO, SETTINGS | List launchable apps and find the never-blockable ones. `QUERY_ALL_PACKAGES` is not used | 1.1 |
 | `NFC` | Read the tag UID | 1.3 |
 | `RECEIVE_BOOT_COMPLETED` | Restore lock after reboot | 2.1 |
 

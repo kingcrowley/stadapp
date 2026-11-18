@@ -2,7 +2,18 @@
 
 Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
-## Phase 0 — Foundation (PR #1)
+## Slice 1.1 — Block list (PR #2)
+
+- App picker: searchable (case- and accent-insensitive) list of launchable apps with icons and tick boxes; ticks save immediately. Home shows "N apps blocked" and **Choose apps**.
+- `core/`: `AppEntry`, `BlockList`, `PickerRow`, `BlockListRules` (`setBlocked`, `sanitize`, `shouldPersistSanitized`, `effective`, `blockedCount`, `pickerRows`, `ALWAYS_PROTECTED`). The list is read-only while locked (switches on in 1.2).
+- `data/`: `BlockListRepository` with an atomic `update`, backed by one app-wide Preferences DataStore; corrupt file reads as empty.
+- `service/`: `InstalledApps`, `ProtectedPackages` (Stad, system UI, every home app, dialer, SMS app, Settings), `AppIcons` (cached 48dp bitmaps).
+- Protection is applied on read, never written to storage; uninstalled apps are cleaned up only while unlocked and never from an empty app query.
+- Manifest `<queries>` for LAUNCHER, HOME, DIAL, SENDTO, SETTINGS (no `QUERY_ALL_PACKAGES`); `dataExtractionRules` keeps settings off cloud backup and device transfer.
+- CodeRabbit fixes: the picker stays read-only until every protected-app lookup has succeeded; a failed save keeps the last saved list and shows a warning; a storage read error shows an empty list and keeps retrying with back-off; a newer refresh cancels an older one.
+- **Unit tests:** 35 (+30: `BlockListRulesTest` 20, `BlockListTest` 3, `DataStoreBlockListRepositoryTest` 7).
+
+## Phase 0 — Foundation (PR #1, merged 2026-11-17)
 
 - Repository set up: GPL-3.0 license, README, `.gitignore`, PR template.
 - Docs: `01_START_HERE`, `02_ARCHITECTURE`, `03_PRODUCT_DESIGN`, `04_ROADMAP`, `05_GITHUB_WORKFLOW_GUIDE`, `06_PLAY_POLICY`, this changelog, and `CLAUDE.md`.

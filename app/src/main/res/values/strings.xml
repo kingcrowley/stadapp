@@ -3,4 +3,15 @@
     <string name="tagline">Tap a tag to lock your distracting apps.</string>
     <string name="state_unlocked">Unlocked</string>
     <string name="state_locked">Locked</string>
+    <plurals name="apps_blocked">
+        <item quantity="one">%d app blocked</item>
+        <item quantity="other">%d apps blocked</item>
+    </plurals>
+    <string name="choose_apps">Choose apps</string>
+    <string name="search_apps">Search apps</string>
+    <string name="no_apps_match">No apps match your search.</string>
+    <string name="cannot_be_blocked">Can\'t be blocked</string>
+    <string name="protection_unknown_banner">Stad couldn\'t check which apps are protected, so the list is read-only for now. Close and reopen Stad to try again.</string>
+    <string name="save_failed_banner">Your last change couldn\'t be saved. Please try again.</string>
+    <string name="list_locked_banner">Unlock with your tag to change this list.</string>
 </resources>

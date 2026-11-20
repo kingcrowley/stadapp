@@ -4,12 +4,12 @@ Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
 ## Slice 2.1 — Lock survives (PR #5, in review)
 
-- After a reboot, an update of Stad or the service reconnecting, a locked phone blocks again with no user action, including the app already on screen: the service can't see what's in front until the next screen change, so while locked with apps listed and the foreground unknown it goes Home once. Cost: after an update while locked, the app that was open goes to the background once, even an unblocked one.
+- After a reboot, an update of Stad or the service reconnecting, a locked phone blocks again with no user action as long as Stad's Accessibility service is still on, including the app already on screen (if it's off, the lock survives but the user must turn it back on; see below): the service can't see what's in front until the next screen change, so while locked with apps listed and the foreground unknown it goes Home once (retrying every second if Android refuses). Cost: after an update while locked, the app that was open goes to the background once, even an unblocked one.
 - When Stad is locked but its Accessibility service is off (a force-stop always turns it off), Home's service card turns into a red warning, "Stad is locked, but blocking is off", with **Turn on**. After a boot or update a notification says the same; tapping it opens Home. It's cancelled when the service connects and whenever Home is shown.
 - Home asks for the notification permission on Android 13+ (Allow / Not now; "Not now" and a refusal are remembered). Without it Home still warns.
 - `core/`: `ConnectCheck` (Home once on connect, checked on every stored change so a read error first reading as Unlocked still re-locks), `BlockingHealth` (`Ok` / `OffUnlocked` / `OffWhileLocked`), `BootCheck` (only `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED`).
 - `data/`: `NotifyPromptRepository` (`notify_prompt_dismissed`).
-- `service/`: `BootReceiver` (not exported; `goAsync`, lock read with a 5 s timeout that fails open), `BlockingWarning` (channel "Blocking warnings", one fixed id), `ServiceStatus` (shared enabled-service check, now also used by tag taps and Home).
+- `service/`: `BootReceiver` (not exported; `goAsync`, lock read with a 5 s timeout that fails open), `BlockingWarning` (channel "Blocking warnings", one fixed id; a check that started before a cancel can't post afterwards), `ServiceStatus` (shared enabled-service check, now also used by tag taps and Home).
 - Manifest: `RECEIVE_BOOT_COMPLETED`, `POST_NOTIFICATIONS`, the receiver.
 - Not prevented yet: force-stop and turning the service off while locked (2.2).
 - **Unit tests:** 128 (+14: `ConnectCheckTest` 7, `BlockingHealthTest` 3, `BootCheckTest` 2, `NotifyPromptRepositoryTest` 2).

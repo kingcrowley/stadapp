@@ -25,11 +25,13 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (!BootCheck.handles(intent.action)) return
         val app = context.applicationContext
+        // Taken before the slow read, so Home or the service cancelling meanwhile wins.
+        val token = BlockingWarning.token()
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val health = BlockingHealth.of(readLock(app), ServiceStatus.isOn(app))
-                if (health == BlockingHealth.OffWhileLocked) BlockingWarning.post(app)
+                if (health == BlockingHealth.OffWhileLocked) BlockingWarning.post(app, token)
             } finally {
                 pending.finish()
             }

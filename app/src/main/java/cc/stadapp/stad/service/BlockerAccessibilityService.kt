@@ -74,8 +74,11 @@ class BlockerAccessibilityService : AccessibilityService() {
     private fun checkOnConnect(): Boolean =
         when (ConnectCheck.decide(lockState, blockList.isEmpty(), lastForeground != null, homeSent)) {
             ConnectCheck.Action.GoHome -> {
-                // If Home is refused, the next stored change or window event tries again.
                 homeSent = performGlobalAction(GLOBAL_ACTION_HOME)
+                // Refused: try again shortly, until Home works, a window event shows what's in
+                // front, or blocking no longer applies (checkOnConnect then does nothing).
+                handler.removeCallbacks(connectRetry)
+                if (!homeSent) handler.postDelayed(connectRetry, CONNECT_RETRY_MS)
                 true
             }
             ConnectCheck.Action.EvaluateForeground -> {
@@ -129,6 +132,8 @@ class BlockerAccessibilityService : AccessibilityService() {
         block(pkg)
     }
 
+    private val connectRetry = Runnable { checkOnConnect() }
+
     /** Re-checks the app Stad last saw, e.g. after an unsure protection lookup or a failed block. */
     private val retry = Runnable { lastForeground?.let(::evaluate) }
 
@@ -176,5 +181,6 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private companion object {
         const val BLOCK_SCREEN_DELAY_MS = 250L
+        const val CONNECT_RETRY_MS = 1_000L
     }
 }

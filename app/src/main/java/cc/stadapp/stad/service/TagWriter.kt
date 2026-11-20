@@ -69,8 +69,12 @@ object TagWriter {
         return WriteOutcome.CantWrite
     }
 
-    /** True if the tag's record reads back intact; if not, rewrites it once and reports that. */
-    fun verifyOrRewrite(tag: Tag): Boolean = hasStadRecord(tag) || write(tag) == WriteOutcome.Written
+    /**
+     * True if the tag's record reads back intact. If not, rewrites it once and reads it back again,
+     * so a rewrite cut short by the tag moving can't be reported as success.
+     */
+    fun verifyOrRewrite(tag: Tag): Boolean =
+        hasStadRecord(tag) || (write(tag) == WriteOutcome.Written && hasStadRecord(tag))
 
     private fun hasStadRecord(tag: Tag): Boolean {
         val ndef = Ndef.get(tag) ?: return false

@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Reading the paired tag, and a short buzz to confirm a tap. Both normal permissions. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Stad can't lock without NFC, so Play only offers it to phones that have it. -->
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="true" />
+
     <!--
         Package visibility (API 30+). Only what the block list needs; no QUERY_ALL_PACKAGES.
         LAUNCHER lists pickable apps; HOME, DIAL, SENDTO, SETTINGS and InputMethod find the apps
@@ -59,6 +68,29 @@
             android:launchMode="singleTask"
             android:taskAffinity="cc.stadapp.stad.blocked"
             android:theme="@style/Theme.Stad" />
+
+        <!--
+            Started by Android when a Stad tag is tapped anywhere. Invisible: it toggles the lock
+            and closes. The filter must match the tag's first record (core/StadTagMime), including
+            the DEFAULT category, or Android opens MainActivity without the tag instead. A MIME
+            record, not a web link: Android 16+ sends http(s) tags to ACTION_VIEW instead.
+            Exported by necessity; see TagActivity.
+            TODO(target-sdk-37): Android 17 requires android:permission=
+            "android.permission.DISPATCH_NFC_MESSAGE" here once targetSdk is 37 or higher.
+        -->
+        <activity
+            android:name=".service.TagActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="standard"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Stad.Invisible">
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.cc.stadapp.stad" />
+            </intent-filter>
+        </activity>
 
         <!--
             Detects when a blocked app comes to the front. Window-state changes only, no window

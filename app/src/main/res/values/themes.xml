@@ -2,4 +2,14 @@
 <resources>
     <!-- Window theme only; the UI itself is themed in Compose (ui/theme/Theme.kt). -->
     <style name="Theme.Stad" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+        For TagActivity: no window content, no animation. Translucent rather than NoDisplay,
+        because NoDisplay must finish before onResume and the tap's write is async. Never set a
+        screenOrientation on it: a translucent activity that does crashes on Android 8.0.
+    -->
+    <style name="Theme.Stad.Invisible" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoDisplay">false</item>
+    </style>
 </resources>

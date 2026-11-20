@@ -28,11 +28,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cc.stadapp.stad.R
 import cc.stadapp.stad.core.LockState
+import cc.stadapp.stad.core.PairingFlow
 import cc.stadapp.stad.ui.theme.StadTheme
 
 /**
  * Home: name, lock state, how many apps are blocked, whether the blocking service is on, and the
- * way into the picker. [showDebugLock] is true in debug builds only.
+ * way into the picker, plus the paired tag and NFC state. [pairing] is non-null while the pairing
+ * dialog is open. [showDebugLock] is true in debug builds only.
  */
 @Composable
 fun HomeScreen(
@@ -42,9 +44,16 @@ fun HomeScreen(
     protectionUnknown: Boolean = false,
     lockFailed: Boolean = false,
     settingsUnavailable: Boolean = false,
+    tagPaired: Boolean = false,
+    nfcStatus: NfcStatus = NfcStatus.On,
+    nfcSettingsUnavailable: Boolean = false,
+    pairing: PairingFlow.State? = null,
     showDebugLock: Boolean = false,
     onChooseApps: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit = {},
+    onOpenNfcSettings: () -> Unit = {},
+    onPairTag: () -> Unit = {},
+    onClosePairing: () -> Unit = {},
     onDebugLock: (LockState) -> Unit = {},
 ) {
     var showDisclosure by rememberSaveable { mutableStateOf(false) }
@@ -87,7 +96,24 @@ fun HomeScreen(
                 modifier = Modifier.padding(top = 24.dp),
             )
 
+            if (nfcStatus != NfcStatus.On) {
+                NfcCard(
+                    status = nfcStatus,
+                    onTurnOn = onOpenNfcSettings,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+
+            TagCard(
+                paired = tagPaired,
+                locked = state.isLocked,
+                canPair = nfcStatus == NfcStatus.On && !state.isLocked,
+                onPair = onPairTag,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+
             listOfNotNull(
+                R.string.nfc_settings_unavailable.takeIf { nfcSettingsUnavailable },
                 R.string.settings_unavailable.takeIf { settingsUnavailable },
                 R.string.protection_unknown_home.takeIf { protectionUnknown },
                 R.string.lock_failed.takeIf { lockFailed },
@@ -135,6 +161,98 @@ fun HomeScreen(
             },
         )
     }
+
+    if (pairing != null) {
+        PairingDialog(state = pairing, onClose = onClosePairing)
+    }
+}
+
+@Composable
+private fun TagCard(
+    paired: Boolean,
+    locked: Boolean,
+    canPair: Boolean,
+    onPair: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(if (paired) R.string.tag_paired else R.string.tag_not_paired),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            // Strict: the tag can't be changed while locked, or a new tag would be an unlock.
+            if (locked) {
+                Text(
+                    text = stringResource(R.string.tag_locked_help),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+            } else {
+                OutlinedButton(
+                    onClick = onPair,
+                    enabled = canPair,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Text(stringResource(if (paired) R.string.repair_tag else R.string.pair_tag))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NfcCard(status: NfcStatus, onTurnOn: () -> Unit, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(
+                    if (status == NfcStatus.Missing) R.string.nfc_missing else R.string.nfc_off
+                ),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            if (status == NfcStatus.Off) {
+                Button(onClick = onTurnOn, modifier = Modifier.padding(top = 12.dp)) {
+                    Text(stringResource(R.string.turn_on))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PairingDialog(state: PairingFlow.State, onClose: () -> Unit) {
+    val done = state.step is PairingFlow.Step.Done
+    val message = when (state.error) {
+        PairingFlow.Error.RandomId -> R.string.pairing_error_random
+        PairingFlow.Error.CantWrite -> R.string.pairing_error_cant_write
+        PairingFlow.Error.WriteFailed -> R.string.pairing_error_write_failed
+        PairingFlow.Error.DifferentTag -> R.string.pairing_error_different
+        PairingFlow.Error.Locked -> R.string.pairing_error_locked
+        PairingFlow.Error.SaveFailed -> R.string.pairing_error_save_failed
+        null -> when (state.step) {
+            PairingFlow.Step.Waiting -> R.string.pairing_first
+            is PairingFlow.Step.Confirming -> R.string.pairing_confirm
+            is PairingFlow.Step.Saving -> R.string.pairing_saving
+            is PairingFlow.Step.Done -> R.string.pairing_done
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text(stringResource(R.string.pairing_title)) },
+        text = {
+            Text(
+                text = stringResource(message),
+                color = if (state.error != null) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onClose) {
+                Text(stringResource(if (done) R.string.done else R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable

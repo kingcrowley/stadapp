@@ -23,6 +23,7 @@ val Context.stadSettings: DataStore<Preferences> by preferencesDataStore(
 object StadKeys {
     val BLOCKED_PACKAGES = stringSetPreferencesKey("blocked_packages")
     val LOCK_STATE = stringPreferencesKey("lock_state")
+    val PAIRED_TAG = stringPreferencesKey("paired_tag")
 }
 
 private const val MAX_RETRY_DELAY_MS = 30_000L

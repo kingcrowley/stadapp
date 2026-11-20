@@ -21,7 +21,7 @@ App blockers may use an AccessibilityService, but it is a restricted use:
 |-----------|-----------|------|
 | `QUERY_ALL_PACKAGES` | Restricted; needs a declaration and justification | Not used. Slice 1.1 declares `<queries>` for LAUNCHER, HOME, DIAL, SENDTO and SETTINGS intents; slice 1.2 adds the `android.view.InputMethod` service intent, to find enabled keyboards so they are never blocked. No other queries |
 | Device admin (uninstall protection) | Allowed but scrutinised; must be clearly disclosed and removable when unlocked | Decide in the 2.2 spec; disclose in onboarding |
-| `RECEIVE_BOOT_COMPLETED`, `NFC` | Normal permissions | — |
+| `RECEIVE_BOOT_COMPLETED`, `NFC`, `VIBRATE` | Normal permissions | `NFC` and `VIBRATE` from 1.3 (tag reading/writing and tap feedback). The manifest requires NFC hardware, so Play only offers Stad to phones with NFC |
 
 ## Store listing and accounts
 

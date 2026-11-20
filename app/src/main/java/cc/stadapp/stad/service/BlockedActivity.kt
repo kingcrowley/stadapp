@@ -27,15 +27,21 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import cc.stadapp.stad.BuildConfig
 import cc.stadapp.stad.R
+import cc.stadapp.stad.data.LockStateRepository
+import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.ui.theme.StadTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * Shown over a blocked app. Started only by [BlockerAccessibilityService] (not exported). It
- * closes itself whenever it leaves the screen, so a stale block screen never comes back.
+ * closes itself whenever it leaves the screen or Stad is unlocked, so a stale block screen never
+ * comes back.
  */
 class BlockedActivity : ComponentActivity() {
 
@@ -45,6 +51,11 @@ class BlockedActivity : ComponentActivity() {
         val pkg = intent.getStringExtra(EXTRA_PACKAGE).orEmpty()
         val label = appLabel(pkg)
         val icons = AppIcons(this)
+        // Unlocking with the tag closes the block screen.
+        lifecycleScope.launch {
+            LockStateRepository(stadSettings).lockState.first { !it.isLocked }
+            finish()
+        }
         setContent {
             StadTheme {
                 BackHandler { goHome() }
@@ -104,7 +115,7 @@ private fun BlockedScreen(label: String, icon: android.graphics.Bitmap?, onGoHom
                 modifier = Modifier.padding(top = 16.dp),
             )
             Text(
-                // TODO(slice1.3-remove-debug-toggle): tag-only message once NFC lands.
+                // Debug builds also have the Unlock (debug) button on Home.
                 text = stringResource(if (BuildConfig.DEBUG) R.string.blocked_message_debug else R.string.blocked_message),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,

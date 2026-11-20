@@ -67,6 +67,9 @@ class BlockerAccessibilityService : AccessibilityService() {
         // Only full-screen activities count: dialogs, popups and chat heads from a blocked app
         // mustn't send the user home while they're in another app.
         if (!packageManager.activityExists(ComponentName(pkg, cls))) return
+        // A tag tap's invisible screen isn't "the app in front": the app under it still is, so
+        // locking with the tag over a blocked app blocks that app at once.
+        if (pkg == packageName && cls == TagActivity::class.java.name) return
         lastForeground = pkg
         retries.reset()
         evaluate(pkg)

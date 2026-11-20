@@ -12,7 +12,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import cc.stadapp.stad.MainActivity
 import cc.stadapp.stad.R
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The "Stad is locked, but blocking is off" notification. One fixed id, so a repeat replaces it.
@@ -24,17 +23,20 @@ object BlockingWarning {
 
     // Bumped by every cancel, so a check that started before Home or the service cancelled the
     // warning can't post it again afterwards. Same process for the receiver, Home and the service.
-    private val cancels = AtomicInteger()
+    // The final check plus notify, and the bump plus cancel, each run under one lock, so a cancel
+    // can't slip between them.
+    private val lock = Any()
+    private var cancels = 0
 
     /** A token for [post]: the warning is posted only if nothing cancelled it since. */
-    fun token(): Int = cancels.get()
+    fun token(): Int = synchronized(lock) { cancels }
 
     /**
      * Posts the warning, unless it was cancelled since [token] was taken, blocking is back on, or
      * Stad may not post notifications.
      */
     fun post(context: Context, token: Int) {
-        if (cancels.get() != token || ServiceStatus.isOn(context)) return
+        if (token() != token || ServiceStatus.isOn(context)) return
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -61,17 +63,20 @@ object BlockingWarning {
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
-        try {
-            // Last check right before posting; a cancel after this removes it as normal.
-            if (cancels.get() != token) return
-            manager.notify(NOTIFICATION_ID, notification)
-        } catch (_: SecurityException) {
-            // Permission withdrawn between the check and here: Home still warns.
+        synchronized(lock) {
+            if (cancels != token) return
+            try {
+                manager.notify(NOTIFICATION_ID, notification)
+            } catch (_: SecurityException) {
+                // Permission withdrawn between the check and here: Home still warns.
+            }
         }
     }
 
     fun cancel(context: Context) {
-        cancels.incrementAndGet()
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        synchronized(lock) {
+            cancels++
+            NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        }
     }
 }

@@ -2,6 +2,7 @@ package cc.stadapp.stad.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -27,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cc.stadapp.stad.R
+import cc.stadapp.stad.core.BlockingHealth
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PairingFlow
 import cc.stadapp.stad.ui.theme.StadTheme
@@ -34,7 +37,8 @@ import cc.stadapp.stad.ui.theme.StadTheme
 /**
  * Home: name, lock state, how many apps are blocked, whether the blocking service is on, and the
  * way into the picker, plus the paired tag and NFC state. [pairing] is non-null while the pairing
- * dialog is open. [showDebugLock] is true in debug builds only.
+ * dialog is open. [askNotifications] shows the card asking to allow the "blocking is off" warning.
+ * [showDebugLock] is true in debug builds only.
  */
 @Composable
 fun HomeScreen(
@@ -48,12 +52,15 @@ fun HomeScreen(
     nfcStatus: NfcStatus = NfcStatus.On,
     nfcSettingsUnavailable: Boolean = false,
     pairing: PairingFlow.State? = null,
+    askNotifications: Boolean = false,
     showDebugLock: Boolean = false,
     onChooseApps: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit = {},
     onOpenNfcSettings: () -> Unit = {},
     onPairTag: () -> Unit = {},
     onClosePairing: () -> Unit = {},
+    onAllowNotifications: () -> Unit = {},
+    onDismissNotifications: () -> Unit = {},
     onDebugLock: (LockState) -> Unit = {},
 ) {
     var showDisclosure by rememberSaveable { mutableStateOf(false) }
@@ -91,10 +98,18 @@ fun HomeScreen(
             )
 
             ServiceCard(
-                enabled = serviceEnabled,
+                health = BlockingHealth.of(state, serviceEnabled),
                 onTurnOn = { showDisclosure = true },
                 modifier = Modifier.padding(top = 24.dp),
             )
+
+            if (askNotifications) {
+                NotifyCard(
+                    onAllow = onAllowNotifications,
+                    onDismiss = onDismissNotifications,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
 
             if (nfcStatus != NfcStatus.On) {
                 NfcCard(
@@ -256,14 +271,30 @@ private fun PairingDialog(state: PairingFlow.State, onClose: () -> Unit) {
 }
 
 @Composable
-private fun ServiceCard(enabled: Boolean, onTurnOn: () -> Unit, modifier: Modifier = Modifier) {
-    Card(modifier = modifier.fillMaxWidth()) {
+private fun ServiceCard(health: BlockingHealth, onTurnOn: () -> Unit, modifier: Modifier = Modifier) {
+    // Locked but off is the one state where the user thinks they're protected and aren't.
+    val warning = health == BlockingHealth.OffWhileLocked
+    val colors = if (warning) {
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        )
+    } else {
+        CardDefaults.cardColors()
+    }
+    Card(modifier = modifier.fillMaxWidth(), colors = colors) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = stringResource(if (enabled) R.string.service_on else R.string.service_off),
+                text = stringResource(
+                    when (health) {
+                        BlockingHealth.Ok -> R.string.service_on
+                        BlockingHealth.OffUnlocked -> R.string.service_off
+                        BlockingHealth.OffWhileLocked -> R.string.service_off_while_locked
+                    },
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            if (!enabled) {
+            if (health != BlockingHealth.Ok) {
                 Button(onClick = onTurnOn, modifier = Modifier.padding(top = 12.dp)) {
                     Text(stringResource(R.string.turn_on))
                 }
@@ -272,6 +303,19 @@ private fun ServiceCard(enabled: Boolean, onTurnOn: () -> Unit, modifier: Modifi
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 12.dp),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotifyCard(onAllow: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = stringResource(R.string.notify_prompt), style = MaterialTheme.typography.bodyLarge)
+            Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onAllow) { Text(stringResource(R.string.notify_allow)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.notify_not_now)) }
             }
         }
     }

@@ -9,6 +9,7 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import cc.stadapp.stad.core.BlockDecision
 import cc.stadapp.stad.core.BlockList
+import cc.stadapp.stad.core.ConnectCheck
 import cc.stadapp.stad.core.Decision
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.RelaunchGuard
@@ -41,13 +42,17 @@ class BlockerAccessibilityService : AccessibilityService() {
     private var lockState = LockState.Unlocked
     private var blockList = BlockList()
     private var lastForeground: String? = null
+    // Whether this connection has already sent the user Home (see checkOnConnect).
+    private var homeSent = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        // Connected means blocking works, so the "blocking is off" warning no longer applies.
+        BlockingWarning.cancel(this)
         scope.launch {
             DataStoreBlockListRepository(stadSettings).blockList.collect {
                 blockList = it
-                lastForeground?.let(::evaluate)
+                if (!checkOnConnect()) lastForeground?.let(::evaluate)
             }
         }
         scope.launch {
@@ -55,10 +60,30 @@ class BlockerAccessibilityService : AccessibilityService() {
                 val justLocked = !lockState.isLocked && state.isLocked
                 lockState = state
                 // Locking while a blocked app is open blocks it at once, if Stad has seen it.
-                if (justLocked) lastForeground?.let(::evaluate)
+                if (!checkOnConnect() && justLocked) lastForeground?.let(::evaluate)
             }
         }
     }
+
+    /**
+     * After a (re)connect, e.g. a reboot or an update of Stad, a blocked app may already be in
+     * front, and Stad can't ask which app that is. So while it's unknown and Stad is locked with
+     * apps to block, go Home once. Checked on every stored change, since a read error first reads
+     * as Unlocked and the real lock arrives later. Returns whether it acted.
+     */
+    private fun checkOnConnect(): Boolean =
+        when (ConnectCheck.decide(lockState, blockList.isEmpty(), lastForeground != null, homeSent)) {
+            ConnectCheck.Action.GoHome -> {
+                // If Home is refused, the next stored change or window event tries again.
+                homeSent = performGlobalAction(GLOBAL_ACTION_HOME)
+                true
+            }
+            ConnectCheck.Action.EvaluateForeground -> {
+                lastForeground?.let(::evaluate)
+                true
+            }
+            ConnectCheck.Action.Nothing -> false
+        }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return

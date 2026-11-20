@@ -6,10 +6,8 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
 import android.os.Parcelable
-import android.provider.Settings
 import android.widget.Toast
 import cc.stadapp.stad.R
-import cc.stadapp.stad.core.AccessibilityStatus
 import cc.stadapp.stad.core.BlockListRules
 import cc.stadapp.stad.core.StadTagMime
 import cc.stadapp.stad.core.TagFeedback
@@ -58,7 +56,7 @@ object TagTaps {
             } else {
                 0
             }
-            TagFeedback.of(outcome, count, serviceOn(app))
+            TagFeedback.of(outcome, count, ServiceStatus.isOn(app))
         }.await()
     }
 
@@ -80,12 +78,6 @@ object TagTaps {
         val tag = intent.parcelable(NfcAdapter.EXTRA_TAG, Tag::class.java) ?: return null
         return TagId.fromBytes(tag.id)
     }
-
-    private fun serviceOn(context: Context): Boolean = AccessibilityStatus.isEnabled(
-        Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
-        context.packageName,
-        BlockerAccessibilityService::class.java.name,
-    )
 
     private fun message(context: Context, feedback: TagFeedback): String = when (feedback.message) {
         TagFeedback.Message.Locked -> context.getString(R.string.tap_locked)

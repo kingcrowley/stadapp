@@ -36,7 +36,7 @@
     <string name="restricted_settings_hint">If the switch is greyed out: open Stad\'s App info, tap ⋮, then Allow restricted settings.</string>
     <string name="protection_unknown_home">Stad couldn\'t confirm which apps are protected, so it may not block anything yet. Close and reopen Stad to try again.</string>
     <string name="disclosure_title">Allow Stad to see which app is open</string>
-    <string name="disclosure_body">Stad uses Android\'s Accessibility service to block the apps you choose.\n\nWhat it accesses: which app and screen are open (the app\'s package name and the screen\'s name), each time you switch screens.\n\nWhy: so it can cover a blocked app with Stad\'s block screen while you\'re locked.\n\nIt never reads what\'s on the screen or what you type. These names are not stored, shared or sent anywhere.\n\nStad needs this to block apps. Without it, nothing is blocked.\n\nIf you agree, Android\'s Accessibility settings will open. Turn on \"Stad app blocker\" there.</string>
+    <string name="disclosure_body">Stad uses Android\'s Accessibility service to block the apps you choose.\n\nWhat it accesses: which app and screen are open (the app\'s package name and the screen\'s name), each time you switch screens.\n\nWhy: so it can cover a blocked app with Stad\'s block screen while you\'re locked.\n\nIt never reads what\'s on the screen or what you type. These names are not stored, shared or sent anywhere.\n\nStad needs this to block apps. Without it, nothing is blocked.\n\nIf you turn it off while Stad is locked, Stad notes when, so you can see it later on this phone.\n\nIf you agree, Android\'s Accessibility settings will open. Turn on \"Stad app blocker\" there.</string>
     <string name="disclosure_agree">Agree</string>
     <string name="disclosure_decline">No thanks</string>
 
@@ -49,6 +49,24 @@
     <string name="warning_channel_name">Blocking warnings</string>
     <string name="warning_title">Stad is locked, but blocking is off</string>
     <string name="warning_text">Tap to turn it back on.</string>
+
+    <!-- Home: blocking history (slice 2.2) -->
+    <plurals name="history_title">
+        <item quantity="one">While locked, blocking was off %d time in the last 7 days.</item>
+        <item quantity="other">While locked, blocking was off %d times in the last 7 days.</item>
+    </plurals>
+    <string name="history_exact">%1$s %2$s – %3$s (%4$s)</string>
+    <string name="history_approx">%1$s, stopped some time after %2$s, back on at %3$s (start not known exactly)</string>
+    <string name="history_approx_unlock">%1$s, stopped some time after %2$s, until you unlocked at %3$s (start not known exactly)</string>
+    <string name="history_today">Today</string>
+    <string name="history_yesterday">Yesterday</string>
+    <string name="history_under_a_minute">under a minute</string>
+    <plurals name="history_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <string name="history_hours">%1$d h %2$d min</string>
+    <string name="history_clear">Clear history</string>
 
     <!-- Tag taps (toasts) -->
     <string name="tap_locked">Locked. Your chosen apps are blocked.</string>

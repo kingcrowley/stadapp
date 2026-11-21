@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
                 val tagPaired by blockList.tagPaired.collectAsStateWithLifecycle()
                 val pairingSession by pairing.collectAsStateWithLifecycle()
                 val notifyDismissed by blockList.notifyPromptDismissed.collectAsStateWithLifecycle()
+                val history by blockList.history.collectAsStateWithLifecycle()
                 // Two screens and a dialog, so plain state. TODO(slice2.x-navigation):
                 // navigation-compose if more screens arrive.
                 var showPicker by rememberSaveable { mutableStateOf(false) }
@@ -115,6 +116,8 @@ class MainActivity : ComponentActivity() {
                         nfcSettingsUnavailable = nfcSettingsUnavailable && nfcStatus == NfcStatus.Off,
                         pairing = pairingSession?.state,
                         askNotifications = !notificationsAllowed && !notifyDismissed,
+                        history = history.recent(System.currentTimeMillis()),
+                        now = System.currentTimeMillis(),
                         showDebugLock = BuildConfig.DEBUG,
                         onChooseApps = { showPicker = true },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
@@ -125,6 +128,7 @@ class MainActivity : ComponentActivity() {
                         onClosePairing = { pairing.value = null },
                         onAllowNotifications = ::askNotificationPermission,
                         onDismissNotifications = blockList::dismissNotifyPrompt,
+                        onClearHistory = blockList::clearHistory,
                         onDebugLock = blockList::setLockedForDebug,
                     )
                 }
@@ -138,6 +142,8 @@ class MainActivity : ComponentActivity() {
         blockList.refresh()
         readServiceEnabled()
         readNotificationsAllowed()
+        // Locked with blocking off (e.g. after a force-stop): note it in the blocking history.
+        if (!serviceEnabled) blockList.recordFoundOff()
         contentResolver.registerContentObserver(
             Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
             false,

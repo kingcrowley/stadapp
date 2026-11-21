@@ -6,6 +6,7 @@ import android.content.Intent
 import cc.stadapp.stad.core.BlockingHealth
 import cc.stadapp.stad.core.BootCheck
 import cc.stadapp.stad.core.LockState
+import cc.stadapp.stad.data.EscapeRepository
 import cc.stadapp.stad.data.LockStateRepository
 import cc.stadapp.stad.data.stadSettings
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,10 @@ class BootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val health = BlockingHealth.of(readLock(app), ServiceStatus.isOn(app))
-                if (health == BlockingHealth.OffWhileLocked) BlockingWarning.post(app, token)
+                if (health == BlockingHealth.OffWhileLocked) {
+                    recordFoundOff(app)
+                    BlockingWarning.post(app, token)
+                }
             } finally {
                 pending.finish()
             }
@@ -45,6 +49,17 @@ class BootReceiver : BroadcastReceiver() {
         } catch (_: Exception) {
             null
         } ?: LockState.Unlocked
+
+    /** Notes in the blocking history that blocking is off (e.g. after a force-stop). Best effort. */
+    private suspend fun recordFoundOff(context: Context) {
+        try {
+            withTimeoutOrNull(READ_TIMEOUT_MS) {
+                EscapeRepository(context.stadSettings).onFoundOff(ForceStops.lastAt(context), System.currentTimeMillis())
+            }
+        } catch (_: Exception) {
+            // The next time Stad runs tries again.
+        }
+    }
 
     private companion object {
         // Well inside the ~10 s a goAsync() receiver gets.

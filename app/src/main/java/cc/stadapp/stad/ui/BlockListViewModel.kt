@@ -5,16 +5,20 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.stadapp.stad.core.AppEntry
 import cc.stadapp.stad.core.BlockListRules
+import cc.stadapp.stad.core.EscapeLog
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PickerRow
 import cc.stadapp.stad.data.DataStoreBlockListRepository
+import cc.stadapp.stad.data.EscapeRepository
 import cc.stadapp.stad.data.LockStateRepository
 import cc.stadapp.stad.data.NotifyPromptRepository
 import cc.stadapp.stad.data.TagRepository
 import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.service.AppIcons
+import cc.stadapp.stad.service.ForceStops
 import cc.stadapp.stad.service.InstalledApps
 import cc.stadapp.stad.service.ProtectedPackages
+import cc.stadapp.stad.service.ServiceStatus
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -81,6 +85,36 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     val tagPaired: StateFlow<Boolean> = TagRepository(app.stadSettings).pairedTag
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val escape = EscapeRepository(app.stadSettings)
+
+    /** The blocking history (when blocking was off while locked). */
+    val history: StateFlow<EscapeLog> =
+        escape.log.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EscapeLog())
+
+    /** Clears the history; the repository refuses while locked. */
+    fun clearHistory() {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { escape.clear() }
+            } catch (_: IOException) {
+                // Stays as it was; the user can try again.
+            }
+        }
+    }
+
+    /** Stad is open and blocking is off: note it in the history if locked (e.g. after a force-stop). */
+    fun recordFoundOff() {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    escape.onFoundOff(ForceStops.lastAt(getApplication()), System.currentTimeMillis())
+                }
+            } catch (_: IOException) {
+                // The next check tries again.
+            }
+        }
+    }
 
     private val notifyPrompt = NotifyPromptRepository(app.stadSettings)
 
@@ -169,7 +203,10 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     fun setLockedForDebug(state: LockState) {
         viewModelScope.launch {
             _lockFailed.value = try {
-                withContext(Dispatchers.IO) { lockRepository.set(state) }
+                withContext(Dispatchers.IO) {
+                    val app = getApplication<Application>()
+                    lockRepository.set(state, ServiceStatus.isOn(app), ForceStops.lastAt(app), System.currentTimeMillis())
+                }
                 false
             } catch (_: IOException) {
                 true

@@ -24,12 +24,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cc.stadapp.stad.R
 import cc.stadapp.stad.core.BlockingHealth
+import cc.stadapp.stad.core.EscapeEntry
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PairingFlow
 import cc.stadapp.stad.ui.theme.StadTheme
@@ -53,6 +55,8 @@ fun HomeScreen(
     nfcSettingsUnavailable: Boolean = false,
     pairing: PairingFlow.State? = null,
     askNotifications: Boolean = false,
+    history: List<EscapeEntry> = emptyList(),
+    now: Long = 0,
     showDebugLock: Boolean = false,
     onChooseApps: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit = {},
@@ -61,6 +65,7 @@ fun HomeScreen(
     onClosePairing: () -> Unit = {},
     onAllowNotifications: () -> Unit = {},
     onDismissNotifications: () -> Unit = {},
+    onClearHistory: () -> Unit = {},
     onDebugLock: (LockState) -> Unit = {},
 ) {
     var showDisclosure by rememberSaveable { mutableStateOf(false) }
@@ -102,6 +107,16 @@ fun HomeScreen(
                 onTurnOn = { showDisclosure = true },
                 modifier = Modifier.padding(top = 24.dp),
             )
+
+            if (history.isNotEmpty()) {
+                HistoryCard(
+                    recent = history,
+                    now = now,
+                    canClear = !state.isLocked,
+                    onClear = onClearHistory,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
 
             if (askNotifications) {
                 NotifyCard(
@@ -269,6 +284,40 @@ private fun PairingDialog(state: PairingFlow.State, onClose: () -> Unit) {
         },
     )
 }
+
+/** When blocking was off while locked, in the last 7 days. Clearable only while unlocked. */
+@Composable
+private fun HistoryCard(
+    recent: List<EscapeEntry>,
+    now: Long,
+    canClear: Boolean,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = pluralStringResource(R.plurals.history_title, recent.size, recent.size),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            recent.take(MAX_HISTORY_LINES).forEach { entry ->
+                Text(
+                    text = HistoryText.line(context, entry, now),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (canClear) {
+                TextButton(onClick = onClear, modifier = Modifier.padding(top = 8.dp)) {
+                    Text(stringResource(R.string.history_clear))
+                }
+            }
+        }
+    }
+}
+
+private const val MAX_HISTORY_LINES = 5
 
 @Composable
 private fun ServiceCard(health: BlockingHealth, onTurnOn: () -> Unit, modifier: Modifier = Modifier) {

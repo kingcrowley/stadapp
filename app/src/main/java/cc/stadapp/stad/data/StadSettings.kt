@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -26,6 +27,15 @@ object StadKeys {
     val LOCK_STATE = stringPreferencesKey("lock_state")
     val PAIRED_TAG = stringPreferencesKey("paired_tag")
     val NOTIFY_PROMPT_DISMISSED = booleanPreferencesKey("notify_prompt_dismissed")
+
+    // Blocking history (slice 2.2); see EscapeRepository.
+    val ESCAPE_LOG = stringPreferencesKey("escape_log")
+    val ESCAPE_OFF_SINCE = longPreferencesKey("escape_off_since")
+    val ESCAPE_OFF_APPROX = booleanPreferencesKey("escape_off_approx")
+    val ESCAPE_LAST_ALIVE = longPreferencesKey("escape_last_alive")
+    val ESCAPE_LOCKED_AT = longPreferencesKey("escape_locked_at")
+    val ESCAPE_CONNECTED = booleanPreferencesKey("escape_connected")
+    val ESCAPE_CONNECTED_AT = longPreferencesKey("escape_connected_at")
 }
 
 private const val MAX_RETRY_DELAY_MS = 30_000L

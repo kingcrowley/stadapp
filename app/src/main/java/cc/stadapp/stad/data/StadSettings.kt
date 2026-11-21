@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -24,6 +25,7 @@ object StadKeys {
     val BLOCKED_PACKAGES = stringSetPreferencesKey("blocked_packages")
     val LOCK_STATE = stringPreferencesKey("lock_state")
     val PAIRED_TAG = stringPreferencesKey("paired_tag")
+    val NOTIFY_PROMPT_DISMISSED = booleanPreferencesKey("notify_prompt_dismissed")
 }
 
 private const val MAX_RETRY_DELAY_MS = 30_000L

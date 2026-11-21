@@ -33,8 +33,9 @@ Pair a tag by UID; tapping the paired tag toggles `LockState`; other tags are ig
 
 ## Phase 2: Strict mode
 
-### 2.1 — Lock survives
-Reboot and app update leave the lock in place. After a force-stop the saved lock state survives, but Android doesn't restart a force-stopped app on its own and may disable its Accessibility service. Blocking resumes once the user opens Stad and, if needed, re-enables the service; Stad prompts for this.
+### 2.1 — Lock survives (in review)
+Reboot and app update leave the lock in place. While Stad's Accessibility service stays on, blocking resumes by itself, and the app already on screen is covered too (the service goes Home once on connect while locked). If the service is off, the lock survives but blocking waits for the user to turn it back on. A force-stop always turns Stad's Accessibility service off; the saved lock survives, and Home (plus a notification after boot or update) says "Stad is locked, but blocking is off" with a way to turn it back on.
+**Milestone:** locked, reboot → Instagram is still blocked; force-stop → open Stad → red warning → Turn on → blocked again.
 
 ### 2.2 — Close the escape routes
 While locked: block uninstalling Stad, disabling its Accessibility service, and reaching its App info screen (where Force stop lives).

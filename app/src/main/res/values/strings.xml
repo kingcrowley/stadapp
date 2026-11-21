@@ -31,6 +31,7 @@
     <!-- Home: blocking service -->
     <string name="service_off">Blocking is off. Stad needs its Accessibility service to block apps.</string>
     <string name="service_on">Blocking is on.</string>
+    <string name="service_off_while_locked">Stad is locked, but blocking is off, so nothing is blocked. Turn Stad\'s Accessibility service back on.</string>
     <string name="turn_on">Turn on</string>
     <string name="restricted_settings_hint">If the switch is greyed out: open Stad\'s App info, tap ⋮, then Allow restricted settings.</string>
     <string name="protection_unknown_home">Stad couldn\'t confirm which apps are protected, so it may not block anything yet. Close and reopen Stad to try again.</string>
@@ -38,6 +39,16 @@
     <string name="disclosure_body">Stad uses Android\'s Accessibility service to block the apps you choose.\n\nWhat it accesses: which app and screen are open (the app\'s package name and the screen\'s name), each time you switch screens.\n\nWhy: so it can cover a blocked app with Stad\'s block screen while you\'re locked.\n\nIt never reads what\'s on the screen or what you type. These names are not stored, shared or sent anywhere.\n\nStad needs this to block apps. Without it, nothing is blocked.\n\nIf you agree, Android\'s Accessibility settings will open. Turn on \"Stad app blocker\" there.</string>
     <string name="disclosure_agree">Agree</string>
     <string name="disclosure_decline">No thanks</string>
+
+    <!-- Home: notification permission (Android 13+) -->
+    <string name="notify_prompt">Let Stad warn you if blocking stops, for example after a restart.</string>
+    <string name="notify_allow">Allow</string>
+    <string name="notify_not_now">Not now</string>
+
+    <!-- "Blocking is off" notification -->
+    <string name="warning_channel_name">Blocking warnings</string>
+    <string name="warning_title">Stad is locked, but blocking is off</string>
+    <string name="warning_text">Tap to turn it back on.</string>
 
     <!-- Tag taps (toasts) -->
     <string name="tap_locked">Locked. Your chosen apps are blocked.</string>

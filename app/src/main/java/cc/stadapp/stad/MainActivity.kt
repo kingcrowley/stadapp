@@ -1,10 +1,13 @@
 package cc.stadapp.stad
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,22 +17,24 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cc.stadapp.stad.core.AccessibilityStatus
 import cc.stadapp.stad.core.PairingFlow
 import cc.stadapp.stad.core.TagFeedback
 import cc.stadapp.stad.core.TagId
 import cc.stadapp.stad.data.TagRepository
 import cc.stadapp.stad.data.stadSettings
+import cc.stadapp.stad.service.BlockingWarning
 import cc.stadapp.stad.service.Haptics
+import cc.stadapp.stad.service.ServiceStatus
 import cc.stadapp.stad.service.TagTaps
 import cc.stadapp.stad.service.TagWriter
-import cc.stadapp.stad.service.BlockerAccessibilityService
 import cc.stadapp.stad.ui.AppPickerScreen
 import cc.stadapp.stad.ui.BlockListViewModel
 import cc.stadapp.stad.ui.HomeScreen
@@ -52,6 +57,15 @@ class MainActivity : ComponentActivity() {
         override fun onChange(selfChange: Boolean) = readServiceEnabled()
     }
 
+    // Android 13+ asks before an app may post notifications; below that it's granted at install.
+    private var notificationsAllowed by mutableStateOf(true)
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            notificationsAllowed = granted
+            // Refused: stop asking. Home still warns without it.
+            if (!granted) blockList.dismissNotifyPrompt()
+        }
+
     private val nfcAdapter: NfcAdapter? by lazy { NfcAdapter.getDefaultAdapter(this) }
     private var nfcStatus by mutableStateOf(NfcStatus.On)
     private var nfcSettingsUnavailable by mutableStateOf(false)
@@ -73,6 +87,7 @@ class MainActivity : ComponentActivity() {
                 val lockFailed by blockList.lockFailed.collectAsStateWithLifecycle()
                 val tagPaired by blockList.tagPaired.collectAsStateWithLifecycle()
                 val pairingSession by pairing.collectAsStateWithLifecycle()
+                val notifyDismissed by blockList.notifyPromptDismissed.collectAsStateWithLifecycle()
                 // Two screens and a dialog, so plain state. TODO(slice2.x-navigation):
                 // navigation-compose if more screens arrive.
                 var showPicker by rememberSaveable { mutableStateOf(false) }
@@ -99,6 +114,7 @@ class MainActivity : ComponentActivity() {
                         nfcStatus = nfcStatus,
                         nfcSettingsUnavailable = nfcSettingsUnavailable && nfcStatus == NfcStatus.Off,
                         pairing = pairingSession?.state,
+                        askNotifications = !notificationsAllowed && !notifyDismissed,
                         showDebugLock = BuildConfig.DEBUG,
                         onChooseApps = { showPicker = true },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
@@ -107,6 +123,8 @@ class MainActivity : ComponentActivity() {
                             pairing.value = PairingSession(pairingIds.incrementAndGet(), PairingFlow.State())
                         },
                         onClosePairing = { pairing.value = null },
+                        onAllowNotifications = ::askNotificationPermission,
+                        onDismissNotifications = blockList::dismissNotifyPrompt,
                         onDebugLock = blockList::setLockedForDebug,
                     )
                 }
@@ -119,6 +137,7 @@ class MainActivity : ComponentActivity() {
         // Picks up installs, uninstalls and launcher changes made while Stad was in the background.
         blockList.refresh()
         readServiceEnabled()
+        readNotificationsAllowed()
         contentResolver.registerContentObserver(
             Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
             false,
@@ -129,6 +148,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         readNfcStatus()
+        // Home shows the "blocking is off" warning itself whenever it applies, so the
+        // notification isn't needed while Stad is open.
+        BlockingWarning.cancel(this)
         // While Stad is open it reads tags itself (for pairing, and so a tag works here even if
         // Android's dispatch would go elsewhere). This also stops Android starting TagActivity
         // for the same tap. A, B, F and V so bank and transit cards are seen too.
@@ -146,11 +168,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun readServiceEnabled() {
-        serviceEnabled = AccessibilityStatus.isEnabled(
-            Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
-            packageName,
-            BlockerAccessibilityService::class.java.name,
-        )
+        serviceEnabled = ServiceStatus.isOn(this)
+    }
+
+    private fun readNotificationsAllowed() {
+        notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     private fun readNfcStatus() {

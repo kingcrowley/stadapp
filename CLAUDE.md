@@ -50,5 +50,6 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 | 1.1 — Block list | Merged | 35 | PR #2, `Phase1-Slice1-Complete` |
 | 1.2 — Blocking engine | Merged | 65 | PR #3, `Phase1-Slice2-Complete` |
 | 1.3 — NFC lock | In review | 114 | PR #4 |
+| 2.1 — Lock survives | In review | 128 | PR #5 |
 
-**Next up:** Slice 1.3 — NFC pairing + lock/unlock, in review (PR #4). Spec: `docs/superpowers/specs/2026-11-18-slice1.3-nfc-lock-design.md`; plan: `docs/superpowers/plans/2026-11-18-slice1.3-nfc-lock.md`. Then Phase 2 (strict mode), starting with 2.1 — lock survives reboot.
+**Next up:** Slices 1.3 (NFC lock, PR #4) and 2.1 (lock survives reboot, update and force-stop, PR #5) are in review. 2.1 spec: `docs/superpowers/specs/2026-11-20-slice2.1-lock-survives-design.md`; plan: `docs/superpowers/plans/2026-11-20-slice2.1-lock-survives.md`. Then 2.2 — close the escape routes (force-stop, uninstall, turning the service off while locked).

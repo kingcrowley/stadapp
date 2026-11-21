@@ -9,6 +9,7 @@ import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.PickerRow
 import cc.stadapp.stad.data.DataStoreBlockListRepository
 import cc.stadapp.stad.data.LockStateRepository
+import cc.stadapp.stad.data.NotifyPromptRepository
 import cc.stadapp.stad.data.TagRepository
 import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.service.AppIcons
@@ -80,6 +81,23 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
     val tagPaired: StateFlow<Boolean> = TagRepository(app.stadSettings).pairedTag
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val notifyPrompt = NotifyPromptRepository(app.stadSettings)
+
+    /** The user said "Not now" to the notification card. True until read, so the card doesn't flash up. */
+    val notifyPromptDismissed: StateFlow<Boolean> = notifyPrompt.dismissed
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    /** Remembers "Not now". If the write fails the card simply shows again next time. */
+    fun dismissNotifyPrompt() {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { notifyPrompt.dismiss() }
+            } catch (_: IOException) {
+                // Nothing to undo.
+            }
+        }
+    }
 
     val state: StateFlow<BlockListUiState> =
         combine(repository.blockList, discovery, lockState, query, saveFailed) { list, found, lock, q, failed ->

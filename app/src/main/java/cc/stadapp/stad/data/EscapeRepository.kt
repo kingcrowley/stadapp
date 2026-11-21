@@ -35,9 +35,13 @@ class EscapeRepository(private val dataStore: DataStore<Preferences>) {
         EscapeTracker.onServiceConnected(state, locked, forceStoppedAt, now)
     }
 
-    /** Stad is running and found the service off. */
-    suspend fun onFoundOff(forceStoppedAt: Long?, now: Long) = transition { state, locked ->
-        EscapeTracker.onFoundOff(state, locked, forceStoppedAt, now)
+    /**
+     * Stad is running and found the service off. [blocking] is read again inside the edit: if the
+     * service has connected since the caller looked, there's nothing to record.
+     */
+    suspend fun onFoundOff(blocking: BlockingProbe, now: Long) = transition { state, locked ->
+        if (!locked || blocking.serviceOn()) EscapeUpdate(state)
+        else EscapeTracker.onFoundOff(state, locked, blocking.forceStoppedAt(), now)
     }
 
     /** Refreshes "last seen working" if it's due. Cheap when it isn't (a read, no write). */

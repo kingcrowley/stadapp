@@ -27,8 +27,7 @@ class LockStateRepository(private val dataStore: DataStore<Preferences>) {
      */
     suspend fun set(
         state: LockState,
-        serviceOn: Boolean = true,
-        forceStoppedAt: Long? = null,
+        blocking: BlockingProbe = BlockingProbe.Fixed(),
         now: Long = System.currentTimeMillis(),
     ) {
         dataStore.edit { prefs ->
@@ -36,9 +35,10 @@ class LockStateRepository(private val dataStore: DataStore<Preferences>) {
             prefs[StadKeys.LOCK_STATE] = state.name
             if (was == state) return@edit
             val escape = prefs.escapeState()
+            val on = blocking.serviceOn()
             prefs.applyEscape(
-                if (state.isLocked) EscapeTracker.onLocked(escape, serviceOn, now)
-                else EscapeTracker.onUnlocked(escape, serviceOn, forceStoppedAt, now),
+                if (state.isLocked) EscapeTracker.onLocked(escape, on, now)
+                else EscapeTracker.onUnlocked(escape, on, if (on) null else blocking.forceStoppedAt(), now),
             )
         }
     }

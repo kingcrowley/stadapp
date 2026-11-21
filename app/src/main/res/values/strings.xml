@@ -55,6 +55,7 @@
         <item quantity="one">While locked, blocking was off %d time in the last 7 days.</item>
         <item quantity="other">While locked, blocking was off %d times in the last 7 days.</item>
     </plurals>
+    <string name="history_none_recent">Blocking wasn\'t off while locked in the last 7 days. Older history stays until you clear it.</string>
     <string name="history_exact">%1$s %2$s – %3$s (%4$s)</string>
     <string name="history_approx">%1$s, stopped some time after %2$s, back on at %3$s (start not known exactly)</string>
     <string name="history_approx_unlock">%1$s, stopped some time after %2$s, until you unlocked at %3$s (start not known exactly)</string>

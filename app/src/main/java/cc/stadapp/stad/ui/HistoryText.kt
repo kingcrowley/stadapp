@@ -4,8 +4,8 @@ import android.content.Context
 import android.text.format.DateFormat
 import cc.stadapp.stad.R
 import cc.stadapp.stad.core.EscapeEntry
+import cc.stadapp.stad.core.HistoryDays
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -26,17 +26,11 @@ object HistoryText {
     private fun time(context: Context, at: Long): String = DateFormat.getTimeFormat(context).format(Date(at))
 
     private fun dayLabel(context: Context, at: Long, now: Long): String {
-        val days = dayNumber(now) - dayNumber(at)
-        return when (days) {
+        return when (HistoryDays.ago(at, now)) {
             0L -> context.getString(R.string.history_today)
             1L -> context.getString(R.string.history_yesterday)
             else -> SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(at))
         }
-    }
-
-    private fun dayNumber(at: Long): Long {
-        val c = Calendar.getInstance().apply { timeInMillis = at }
-        return c.get(Calendar.YEAR) * 400L + c.get(Calendar.DAY_OF_YEAR)
     }
 
     private fun duration(context: Context, ms: Long): String {

@@ -54,7 +54,7 @@ class BootReceiver : BroadcastReceiver() {
     private suspend fun recordFoundOff(context: Context) {
         try {
             withTimeoutOrNull(READ_TIMEOUT_MS) {
-                EscapeRepository(context.stadSettings).onFoundOff(ForceStops.lastAt(context), System.currentTimeMillis())
+                EscapeRepository(context.stadSettings).onFoundOff(LiveBlockingProbe(context), System.currentTimeMillis())
             }
         } catch (_: Exception) {
             // The next time Stad runs tries again.

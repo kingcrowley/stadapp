@@ -56,6 +56,7 @@ fun HomeScreen(
     pairing: PairingFlow.State? = null,
     askNotifications: Boolean = false,
     history: List<EscapeEntry> = emptyList(),
+    historyStored: Boolean = history.isNotEmpty(),
     now: Long = 0,
     showDebugLock: Boolean = false,
     onChooseApps: () -> Unit = {},
@@ -108,7 +109,8 @@ fun HomeScreen(
                 modifier = Modifier.padding(top = 24.dp),
             )
 
-            if (history.isNotEmpty()) {
+            // Shown while anything is stored, so older entries can still be cleared.
+            if (historyStored) {
                 HistoryCard(
                     recent = history,
                     now = now,
@@ -285,7 +287,10 @@ private fun PairingDialog(state: PairingFlow.State, onClose: () -> Unit) {
     )
 }
 
-/** When blocking was off while locked, in the last 7 days. Clearable only while unlocked. */
+/**
+ * When blocking was off while locked, in the last 7 days (older entries are kept but not listed).
+ * Clearable only while unlocked.
+ */
 @Composable
 private fun HistoryCard(
     recent: List<EscapeEntry>,
@@ -298,7 +303,11 @@ private fun HistoryCard(
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = pluralStringResource(R.plurals.history_title, recent.size, recent.size),
+                text = if (recent.isEmpty()) {
+                    stringResource(R.string.history_none_recent)
+                } else {
+                    pluralStringResource(R.plurals.history_title, recent.size, recent.size)
+                },
                 style = MaterialTheme.typography.bodyLarge,
             )
             recent.take(MAX_HISTORY_LINES).forEach { entry ->

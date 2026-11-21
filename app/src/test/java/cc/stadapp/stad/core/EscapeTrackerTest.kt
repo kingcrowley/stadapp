@@ -71,6 +71,18 @@ class EscapeTrackerTest {
     }
 
     @Test
+    fun aForceStopFromBeforeTheLastConnectionIsNotReused() {
+        // Force-stopped at 12 min, re-enabled at 20 (recorded then), turned off at 40, and
+        // Home's found-off check gets in before the stop write: 12 min belongs to the old period.
+        val again = EscapeTracker.onServiceConnected(locked, true, forceStoppedAt = 12 * min, now = 20 * min).state
+        val found = EscapeTracker.onFoundOff(again.copy(serviceConnected = false), true, forceStoppedAt = 12 * min, now = 40 * min).state
+        assertEquals(20 * min, found.offSince)
+        assertTrue(found.offSinceApprox)
+        // The exact stop then replaces the estimate.
+        assertEquals(40 * min, EscapeTracker.onServiceStopped(found, true, false, 40 * min).state.offSince)
+    }
+
+    @Test
     fun killedAndReenabledWithoutStadRunningIsRecorded() {
         // Force-stopped at 12 min; nothing ran; user turned it back on from Settings at 30 min.
         val r = EscapeTracker.onServiceConnected(locked, true, forceStoppedAt = 12 * min, now = 30 * min)

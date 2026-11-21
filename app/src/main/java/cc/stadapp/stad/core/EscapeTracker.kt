@@ -24,8 +24,8 @@ data class EscapeUpdate(val state: EscapeState, val entry: EscapeEntry? = null)
  * Pure transitions for the blocking history. Callers apply each one inside a single storage edit,
  * reading the lock in the same edit. Nothing here prevents anything: it only records.
  *
- * `forceStoppedAt` is when Android last recorded the user stopping Stad (a force-stop), if known
- * (Android 11+ keeps process exit reasons); null otherwise.
+ * `forceStoppedAt` is when Android last recorded a force-stop of Stad, if known (Android 11+ keeps
+ * process exit reasons; see [ForceStopRecord]); null otherwise.
  */
 object EscapeTracker {
 
@@ -96,13 +96,17 @@ object EscapeTracker {
         locked && (state.lastAlive == null || now - state.lastAlive >= ALIVE_INTERVAL_MS)
 
     /**
-     * When blocking most likely stopped: Android's force-stop time if it's recent enough to belong
-     * to this lock (exact), else the last time the service was seen working (an estimate). Never
-     * before the lock, and never in the future.
+     * When blocking most likely stopped: Android's force-stop time if it belongs to this off period
+     * (after the lock and after the service last connected: an earlier one was already handled),
+     * exact; else the last time the service was seen working, an estimate. Never before the lock,
+     * and never in the future.
      */
     private fun estimatedStart(state: EscapeState, forceStoppedAt: Long?, now: Long): Pair<Long, Boolean> {
         val floor = state.lockedAt ?: Long.MIN_VALUE
-        if (forceStoppedAt != null && forceStoppedAt >= floor && forceStoppedAt <= now) return forceStoppedAt to false
+        val lastConnect = state.connectedAt ?: Long.MIN_VALUE
+        if (forceStoppedAt != null && forceStoppedAt > lastConnect && forceStoppedAt >= floor && forceStoppedAt <= now) {
+            return forceStoppedAt to false
+        }
         val guess = maxOf(state.lastAlive ?: now, floor).coerceAtMost(now)
         return guess to true
     }

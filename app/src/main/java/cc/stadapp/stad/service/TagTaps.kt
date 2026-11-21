@@ -44,7 +44,7 @@ object TagTaps {
         val app = context.applicationContext
         return appScope.async {
             val outcome = try {
-                TagRepository(app.stadSettings).tap(id, ServiceStatus.isOn(app), ForceStops.lastAt(app), System.currentTimeMillis())
+                TagRepository(app.stadSettings).tap(id, LiveBlockingProbe(app), System.currentTimeMillis())
             } catch (_: IOException) {
                 null
             }

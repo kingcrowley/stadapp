@@ -15,10 +15,9 @@ import cc.stadapp.stad.data.NotifyPromptRepository
 import cc.stadapp.stad.data.TagRepository
 import cc.stadapp.stad.data.stadSettings
 import cc.stadapp.stad.service.AppIcons
-import cc.stadapp.stad.service.ForceStops
 import cc.stadapp.stad.service.InstalledApps
+import cc.stadapp.stad.service.LiveBlockingProbe
 import cc.stadapp.stad.service.ProtectedPackages
-import cc.stadapp.stad.service.ServiceStatus
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -108,7 +107,7 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    escape.onFoundOff(ForceStops.lastAt(getApplication()), System.currentTimeMillis())
+                    escape.onFoundOff(LiveBlockingProbe(getApplication()), System.currentTimeMillis())
                 }
             } catch (_: IOException) {
                 // The next check tries again.
@@ -205,7 +204,7 @@ class BlockListViewModel(app: Application) : AndroidViewModel(app) {
             _lockFailed.value = try {
                 withContext(Dispatchers.IO) {
                     val app = getApplication<Application>()
-                    lockRepository.set(state, ServiceStatus.isOn(app), ForceStops.lastAt(app), System.currentTimeMillis())
+                    lockRepository.set(state, LiveBlockingProbe(app), System.currentTimeMillis())
                 }
                 false
             } catch (_: IOException) {

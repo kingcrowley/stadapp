@@ -24,7 +24,7 @@
 - **Nothing about blocking can be changed while locked.** The block list, the paired tag, and the sneaky-look settings are read-only until you unlock. Otherwise "unlock" is just "edit the list".
 - **Only the paired tag unlocks.** Any other NFC tag is ignored (with a gentle "That's not your Stad tag" message).
 - **Never blockable:** Stad itself, the launcher, the Phone/Dialer app, emergency services. A lock must never stop someone calling for help.
-- **Lost tag:** there is no in-app bypass. The documented recovery path is turning off Stad's Accessibility service in system settings — which slice 2.2 makes harder while locked, so the final recovery is a safe-mode reboot. This trade-off is deliberate and will be stated plainly in onboarding.
+- **Lost tag:** there is no in-app bypass. The documented recovery path is turning off Stad's Accessibility service in system settings, which stops blocking at once (from 2.2 the blocking history notes it). Stad stays locked until the tag is tapped, so to start over with a new tag, clear Stad's storage or reinstall it. Onboarding states this plainly.
 
 ## Strict mode (Phase 2)
 

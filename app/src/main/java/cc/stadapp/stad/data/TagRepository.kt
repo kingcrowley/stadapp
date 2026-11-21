@@ -42,14 +42,13 @@ class TagRepository(private val dataStore: DataStore<Preferences>) {
 
     /**
      * Handles a tap of the tag [scannedId]: the paired tag toggles the lock, anything else changes
-     * nothing. The blocking history is updated in the same edit ([serviceOn]: whether blocking's
-     * service is on; [forceStoppedAt]: Android's last force-stop time, if known). Throws
+     * nothing. The blocking history is updated in the same edit, reading [blocking] inside it so
+     * the service's state is current when the lock changes. Throws
      * [java.io.IOException] if the write fails, in which case nothing changed.
      */
     suspend fun tap(
         scannedId: String,
-        serviceOn: Boolean = true,
-        forceStoppedAt: Long? = null,
+        blocking: BlockingProbe = BlockingProbe.Fixed(),
         now: Long = System.currentTimeMillis(),
     ): TagOutcome {
         var outcome = TagOutcome.NotPaired
@@ -59,11 +58,13 @@ class TagRepository(private val dataStore: DataStore<Preferences>) {
             when (outcome) {
                 TagOutcome.Lock -> {
                     prefs[StadKeys.LOCK_STATE] = LockState.Locked.name
-                    prefs.applyEscape(EscapeTracker.onLocked(prefs.escapeState(), serviceOn, now))
+                    prefs.applyEscape(EscapeTracker.onLocked(prefs.escapeState(), blocking.serviceOn(), now))
                 }
                 TagOutcome.Unlock -> {
                     prefs[StadKeys.LOCK_STATE] = LockState.Unlocked.name
-                    prefs.applyEscape(EscapeTracker.onUnlocked(prefs.escapeState(), serviceOn, forceStoppedAt, now))
+                    val on = blocking.serviceOn()
+                    val stoppedAt = if (on) null else blocking.forceStoppedAt()
+                    prefs.applyEscape(EscapeTracker.onUnlocked(prefs.escapeState(), on, stoppedAt, now))
                 }
                 TagOutcome.NotPaired, TagOutcome.NotYourTag -> Unit
             }

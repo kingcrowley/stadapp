@@ -29,6 +29,8 @@ class ForceStopRecordTest {
         // The install stamp can land just before or just after the kill.
         assertFalse(ForceStopRecord.isForceStop(true, null, 10 * hour, 10 * hour + 20_000, separatesUpdates = false))
         assertFalse(ForceStopRecord.isForceStop(true, null, 10 * hour, 10 * hour - 20_000, separatesUpdates = false))
+        // Accepted limit: a real force-stop this close to an update is taken for the update.
+        assertFalse(ForceStopRecord.isForceStop(true, "stop cc.stadapp.stad due to from pid 1234", 10 * hour, 10 * hour - 20_000, separatesUpdates = false))
         // Android 14+ files updates under their own reason, so the time doesn't matter there.
         assertTrue(ForceStopRecord.isForceStop(true, null, 10 * hour, 10 * hour, separatesUpdates = true))
     }

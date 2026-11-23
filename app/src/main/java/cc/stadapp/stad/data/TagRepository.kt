@@ -3,6 +3,7 @@ package cc.stadapp.stad.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import cc.stadapp.stad.core.EscapeTracker
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.TagAction
 import cc.stadapp.stad.core.TagId
@@ -41,16 +42,30 @@ class TagRepository(private val dataStore: DataStore<Preferences>) {
 
     /**
      * Handles a tap of the tag [scannedId]: the paired tag toggles the lock, anything else changes
-     * nothing. Throws [java.io.IOException] if the write fails, in which case nothing changed.
+     * nothing. The blocking history is updated in the same edit, reading [blocking] inside it so
+     * the service's state is current when the lock changes. Throws
+     * [java.io.IOException] if the write fails, in which case nothing changed.
      */
-    suspend fun tap(scannedId: String): TagOutcome {
+    suspend fun tap(
+        scannedId: String,
+        blocking: BlockingProbe = BlockingProbe.Fixed(),
+        now: Long = System.currentTimeMillis(),
+    ): TagOutcome {
         var outcome = TagOutcome.NotPaired
         dataStore.edit { prefs ->
             val lock = LockState.fromStored(prefs[StadKeys.LOCK_STATE])
             outcome = TagAction.decide(scannedId, prefs[StadKeys.PAIRED_TAG], lock)
             when (outcome) {
-                TagOutcome.Lock -> prefs[StadKeys.LOCK_STATE] = LockState.Locked.name
-                TagOutcome.Unlock -> prefs[StadKeys.LOCK_STATE] = LockState.Unlocked.name
+                TagOutcome.Lock -> {
+                    prefs[StadKeys.LOCK_STATE] = LockState.Locked.name
+                    prefs.applyEscape(EscapeTracker.onLocked(prefs.escapeState(), blocking.serviceOn(), now))
+                }
+                TagOutcome.Unlock -> {
+                    prefs[StadKeys.LOCK_STATE] = LockState.Unlocked.name
+                    val on = blocking.serviceOn()
+                    val stoppedAt = if (on) null else blocking.forceStoppedAt()
+                    prefs.applyEscape(EscapeTracker.onUnlocked(prefs.escapeState(), on, stoppedAt, now))
+                }
                 TagOutcome.NotPaired, TagOutcome.NotYourTag -> Unit
             }
         }

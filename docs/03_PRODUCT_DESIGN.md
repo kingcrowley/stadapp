@@ -24,17 +24,17 @@
 - **Nothing about blocking can be changed while locked.** The block list, the paired tag, and the sneaky-look settings are read-only until you unlock. Otherwise "unlock" is just "edit the list".
 - **Only the paired tag unlocks.** Any other NFC tag is ignored (with a gentle "That's not your Stad tag" message).
 - **Never blockable:** Stad itself, the launcher, the Phone/Dialer app, emergency services. A lock must never stop someone calling for help.
-- **Lost tag:** there is no in-app bypass. The documented recovery path is turning off Stad's Accessibility service in system settings — which slice 2.2 makes harder while locked, so the final recovery is a safe-mode reboot. This trade-off is deliberate and will be stated plainly in onboarding.
+- **Lost tag:** there is no in-app bypass. The documented recovery path is turning off Stad's Accessibility service in system settings, which stops blocking at once (from 2.2 the blocking history notes it). Stad stays locked until the tag is tapped, so to start over with a new tag, clear Stad's storage or reinstall it. Onboarding states this plainly.
 
 ## Strict mode (Phase 2)
 
 | Escape route | Response | Slice |
 |--------------|----------|-------|
 | Reboot | Lock state persisted; Android rebinds the service, which goes Home once if it can't tell what's in front; if the service is off, a notification says "Stad is locked, but blocking is off" | 2.1 |
-| Force-stop Stad | Not automatically recoverable: since Android 15 a force-stopped app stays stopped until the user opens it, and the system may disable its Accessibility service. So while locked, Stad blocks its own App info screen so Force stop can't be reached. If a force-stop happens anyway (e.g. via adb), the saved lock state survives, but blocking is off until the user opens Stad and, if Android disabled it, re-enables Stad's Accessibility service in system settings. From 2.1, Home shows a red "locked, but blocking is off" card with **Turn on**. Onboarding says this plainly rather than promising more | 2.1 / 2.2 |
+| Force-stop Stad | Not automatically recoverable: since Android 15 a force-stopped app stays stopped until the user opens it, and the system may disable its Accessibility service. Stad can't block Force stop (Play policy); from 2.2 a force-stop while locked is recorded in the blocking history. The saved lock state survives, but blocking is off until the user opens Stad and, if Android disabled it, re-enables Stad's Accessibility service in system settings. From 2.1, Home shows a red "locked, but blocking is off" card with **Turn on**. Onboarding says this plainly rather than promising more | 2.1 / 2.2 |
 | App update | State persisted; the rebound service sends the user Home once (so the app that was open goes to the background, even an unblocked one) and blocks whatever they open next; the boot check also runs on `MY_PACKAGE_REPLACED` | 2.1 |
-| Uninstall Stad | Device admin prevents uninstall while locked (exact mechanism decided in the 2.2 spec) | 2.2 |
-| Disable Accessibility service | Block the Accessibility settings screen while locked | 2.2 |
+| Uninstall Stad | Not prevented: Google Play forbids it (Accessibility API and Malware policies). The record goes with the app | 2.2 |
+| Disable Accessibility service | Not prevented (Play policy). From 2.2, recorded: Home shows "While locked, blocking was off N times in the last 7 days" with when and how long | 2.2 |
 
 ## Sneaky look (slice 2.3)
 

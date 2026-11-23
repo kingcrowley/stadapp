@@ -37,8 +37,9 @@ Pair a tag by UID; tapping the paired tag toggles `LockState`; other tags are ig
 Reboot and app update leave the lock in place. While Stad's Accessibility service stays on, blocking resumes by itself, and the app already on screen is covered too (the service goes Home once on connect while locked). If the service is off, the lock survives but blocking waits for the user to turn it back on. A force-stop always turns Stad's Accessibility service off; the saved lock survives, and Home (plus a notification after boot or update) says "Stad is locked, but blocking is off" with a way to turn it back on.
 **Milestone:** locked, reboot → Instagram is still blocked; force-stop → open Stad → red warning → Turn on → blocked again.
 
-### 2.2 — Close the escape routes
-While locked: block uninstalling Stad, disabling its Accessibility service, and reaching its App info screen (where Force stop lives).
+### 2.2 — Blocking history (escape log)
+Google Play forbids apps blocking their own uninstall, the Accessibility switch or Force stop (Accessibility API and Malware policies; see the 2.2 spec). So the Play build stays easy to turn off, and instead records when blocking was off while locked and shows it on Home ("While locked, blocking was off 2 times in the last 7 days").
+**Milestone:** locked, turn the service off for a few minutes and back on → Home shows when and for how long.
 
 ### 2.3 — Sneaky look
 Timed peek (default 5 min) with a cooldown (default 3 h), both configurable while unlocked.
@@ -52,6 +53,8 @@ Permission onboarding, Play's prominent disclosure for the Accessibility API, pr
 Play Console listing ("Stad: NFC App Blocker"), Accessibility declaration, mandatory closed test (12 testers for 14 days on a new personal account), production release, F-Droid submission.
 
 ## Later ideas (unscheduled)
+
+- Strict F-Droid build: a separate flavour, not on Play, that blocks uninstall, the Accessibility switch and App info while locked (decided 2026-11-21; Android's safe mode still beats it)
 
 - Schedules (auto-lock at bedtime)
 - Multiple tags / profiles (work vs home)

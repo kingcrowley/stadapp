@@ -34,6 +34,7 @@ Small enough to live here rather than in its own document.
 | Block decision | `BlockDecision`, `RelaunchGuard`, `AccessibilityStatus` | 1.2 | Pure: block only when locked, listed and not protected; no protection ever confirmed → block nothing (fail open); one launch per burst of window events; parse the enabled-services setting |
 | Lock survival | `ConnectCheck`, `BlockingHealth`, `BootCheck` | 2.1 | Pure: on connect, go Home once while locked with apps listed and the foreground unknown (checked on every stored change, so a read error first reading as Unlocked still re-locks); `OffWhileLocked` when the service is off while locked; only `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED` are handled |
 | Notification prompt | `Boolean`, DataStore key `notify_prompt_dismissed` | 2.1 | "Not now" on Home's notification card |
+| Blocking history | `EscapeLog` (`escape_log`, up to 50 `{start, end, startApprox, endedBy}`), `EscapeState` (`escape_*` keys), `EscapeTracker` | 2.2 | When blocking was off while locked. Changed in the same DataStore edit as the lock. A stop counts only if the enabled-services setting no longer lists Stad; force-stop times from `ApplicationExitInfo` (API 30+). On the phone only |
 | Sneaky look | last-used timestamp, peek length, cooldown | 2.3 | Times in minutes, configurable only while unlocked |
 
 ## Android components (planned)
@@ -49,7 +50,7 @@ Small enough to live here rather than in its own document.
 | `TagRepository` | 1.3 | Paired tag UID on the shared DataStore. `pair` refuses while locked; `tap` reads the paired tag and lock and writes the new lock in one atomic edit |
 | NFC handling | 1.3 | Pairing (two taps) writes a Stad NDEF message (a MIME record `application/vnd.cc.stadapp.stad` first, then an Android Application Record; not a web link, because Android 16+ sends `http(s)` tags to `ACTION_VIEW`) and checks it reads back. Identity is the tag UID, not the record; tags with a random UID are refused. Tapped anywhere: `TagActivity` (translucent, own task, exact `NDEF_DISCOVERED` + `DEFAULT` filter on Stad's MIME type) toggles the lock, vibrates and shows a toast, then closes. Another app with a matching filter can still win dispatch or show a chooser, so opening Stad before tapping is the documented fallback: while open, `MainActivity` reads tags itself in reader mode (A, B, F, V). Taps of the same tag within 1.5 s are ignored. Supported tags: NFC Forum Type 2, e.g. NTAG213/215/216 |
 | `BootReceiver` | 2.1 | Not exported. On `BOOT_COMPLETED` / `MY_PACKAGE_REPLACED`, reads the lock (5 s timeout, fails open) and the enabled-services setting; if locked but the service is off, posts the `BlockingWarning` notification (one fixed id, opens Home). Never starts or enables the service: Android binds an enabled one itself |
-| Device admin / settings guards | 2.2 | Block uninstall and disabling the Accessibility service while locked |
+| Blocking history | 2.2 | The service records stop (synchronously in `onUnbind`) and connect; `BootReceiver`, Home and tag taps record "found off"; Home shows the last 7 days. Nothing is prevented: Play forbids blocking uninstall, disabling or force-stop |
 
 ## Permissions (planned)
 

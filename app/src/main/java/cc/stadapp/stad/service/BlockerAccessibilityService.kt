@@ -11,17 +11,22 @@ import cc.stadapp.stad.core.BlockDecision
 import cc.stadapp.stad.core.BlockList
 import cc.stadapp.stad.core.ConnectCheck
 import cc.stadapp.stad.core.Decision
+import cc.stadapp.stad.core.EscapeTracker
 import cc.stadapp.stad.core.LockState
 import cc.stadapp.stad.core.RelaunchGuard
 import cc.stadapp.stad.core.RetrySchedule
 import cc.stadapp.stad.data.DataStoreBlockListRepository
+import cc.stadapp.stad.data.EscapeRepository
 import cc.stadapp.stad.data.LockStateRepository
 import cc.stadapp.stad.data.stadSettings
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Covers a blocked app with Stad's block screen while Stad is locked.
@@ -44,11 +49,21 @@ class BlockerAccessibilityService : AccessibilityService() {
     private var lastForeground: String? = null
     // Whether this connection has already sent the user Home (see checkOnConnect).
     private var homeSent = false
+    private val escape by lazy { EscapeRepository(stadSettings) }
+    // Last "seen working" write, so window events don't each start a storage edit.
+    private var aliveTouchedAt = Long.MIN_VALUE / 2
+    private var stopRecorded = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         // Connected means blocking works, so the "blocking is off" warning no longer applies.
         BlockingWarning.cancel(this)
+        stopRecorded = false
+        aliveTouchedAt = System.currentTimeMillis()
+        scope.launch {
+            // Ends an off period in the blocking history, if there was one.
+            safely { escape.onServiceConnected(ForceStops.lastAt(this@BlockerAccessibilityService), aliveTouchedAt) }
+        }
         scope.launch {
             DataStoreBlockListRepository(stadSettings).blockList.collect {
                 blockList = it
@@ -100,6 +115,7 @@ class BlockerAccessibilityService : AccessibilityService() {
         if (pkg == packageName && cls == TagActivity::class.java.name) return
         lastForeground = pkg
         retries.reset()
+        touchAlive()
         evaluate(pkg)
     }
 
@@ -171,16 +187,54 @@ class BlockerAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** Refreshes "last seen working" while locked, at most every 15 minutes. */
+    private fun touchAlive() {
+        if (!lockState.isLocked) return
+        val now = System.currentTimeMillis()
+        if (now - aliveTouchedAt < EscapeTracker.ALIVE_INTERVAL_MS) return
+        aliveTouchedAt = now
+        scope.launch { safely { escape.touchAlive(now) } }
+    }
+
     override fun onInterrupt() = Unit
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        recordStop()
+        return super.onUnbind(intent)
+    }
+
     override fun onDestroy() {
+        recordStop() // if onUnbind didn't run
         handler.removeCallbacksAndMessages(null)
         scope.cancel()
         super.onDestroy()
     }
 
+    /**
+     * Notes the stop in the blocking history. Synchronous on purpose: once the service is destroyed
+     * the process may die at once, and the scope is cancelled. It only counts if the setting no
+     * longer lists Stad, so a shutdown or user switch isn't recorded. DataStore writes on its own
+     * thread, typically in tens of milliseconds; the timeout bounds the wait.
+     */
+    private fun recordStop() {
+        if (stopRecorded) return
+        stopRecorded = true
+        val settingOn = ServiceStatus.isOn(this)
+        runBlocking { withTimeoutOrNull(STOP_WRITE_TIMEOUT_MS) { safely { escape.onServiceStopped(settingOn, System.currentTimeMillis()) } } }
+    }
+
+    /** History writes are best effort: a storage error must never affect blocking. */
+    private suspend fun safely(write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (_: IOException) {
+            // Not recorded.
+        }
+    }
+
     private companion object {
         const val BLOCK_SCREEN_DELAY_MS = 250L
         const val CONNECT_RETRY_MS = 1_000L
+        const val STOP_WRITE_TIMEOUT_MS = 2_000L
     }
 }

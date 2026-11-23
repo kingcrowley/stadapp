@@ -19,12 +19,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import cc.stadapp.stad.core.PairingFlow
 import cc.stadapp.stad.core.TagFeedback
 import cc.stadapp.stad.core.TagId
@@ -42,6 +47,7 @@ import cc.stadapp.stad.ui.NfcStatus
 import cc.stadapp.stad.ui.theme.StadTheme
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 
@@ -88,6 +94,18 @@ class MainActivity : ComponentActivity() {
                 val tagPaired by blockList.tagPaired.collectAsStateWithLifecycle()
                 val pairingSession by pairing.collectAsStateWithLifecycle()
                 val notifyDismissed by blockList.notifyPromptDismissed.collectAsStateWithLifecycle()
+                val history by blockList.history.collectAsStateWithLifecycle()
+                // The history's "Today" and 7-day window follow the clock: refreshed on resume
+                // and at each minute while Home is in front, not only when something else changes.
+                var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+                LaunchedEffect(Unit) {
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        while (true) {
+                            now = System.currentTimeMillis()
+                            delay(MINUTE_MS - now % MINUTE_MS)
+                        }
+                    }
+                }
                 // Two screens and a dialog, so plain state. TODO(slice2.x-navigation):
                 // navigation-compose if more screens arrive.
                 var showPicker by rememberSaveable { mutableStateOf(false) }
@@ -115,6 +133,9 @@ class MainActivity : ComponentActivity() {
                         nfcSettingsUnavailable = nfcSettingsUnavailable && nfcStatus == NfcStatus.Off,
                         pairing = pairingSession?.state,
                         askNotifications = !notificationsAllowed && !notifyDismissed,
+                        history = history.recent(now),
+                        historyStored = history.entries.isNotEmpty(),
+                        now = now,
                         showDebugLock = BuildConfig.DEBUG,
                         onChooseApps = { showPicker = true },
                         onOpenAccessibilitySettings = ::openAccessibilitySettings,
@@ -125,6 +146,7 @@ class MainActivity : ComponentActivity() {
                         onClosePairing = { pairing.value = null },
                         onAllowNotifications = ::askNotificationPermission,
                         onDismissNotifications = blockList::dismissNotifyPrompt,
+                        onClearHistory = blockList::clearHistory,
                         onDebugLock = blockList::setLockedForDebug,
                     )
                 }
@@ -138,6 +160,8 @@ class MainActivity : ComponentActivity() {
         blockList.refresh()
         readServiceEnabled()
         readNotificationsAllowed()
+        // Locked with blocking off (e.g. after a force-stop): note it in the blocking history.
+        if (!serviceEnabled) blockList.recordFoundOff()
         contentResolver.registerContentObserver(
             Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
             false,
@@ -262,3 +286,5 @@ class MainActivity : ComponentActivity() {
             NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_NFC_V
     }
 }
+
+private const val MINUTE_MS = 60_000L

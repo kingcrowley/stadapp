@@ -2,6 +2,18 @@
 
 Per-slice detail. The index is the Current Status table in `CLAUDE.md`.
 
+## Slice 2.2 — Blocking history (PR #6, in review)
+
+- Replaces the planned "close the escape routes": Google Play forbids an app blocking its own uninstall, its Accessibility switch or Force stop, so Stad stays easy to turn off and instead keeps an honest record. A strict F-Droid build that closes the routes is a later idea.
+- While locked, Stad records each time blocking was off: the Accessibility service turned off, or Stad force-stopped. Home shows "While locked, blocking was off N times in the last 7 days" and up to 5 entries ("Today 14:02 – 14:20 (18 min)"; "stopped some time after …" when the start is only estimated). **Clear history** only while unlocked. On the phone only.
+- A stop counts only if Android's enabled-services setting no longer lists Stad, so reboots, updates, crashes and user switches aren't recorded. Force-stop times come from Android's process exit records (Android 11+, force-stops only), which also catch a force-stop followed by turning blocking back on straight from Settings; below Android 11 the start is estimated from when blocking was last seen working, never before the lock. Exact off/on toggles under 5 s are ignored (an estimated start has no known length, so those are kept).
+- `core/`: `EscapeLog` (cap 50, last-7-days view, versioned encoding, corrupt reads as empty), `EscapeTracker` (pure transitions).
+- `data/`: `EscapeRepository`; `TagRepository.tap` and `LockStateRepository.set` update the history in the same edit as the lock.
+- `service/`: the blocking service records its stop synchronously in `onUnbind` (setting-checked), its connect, and "last seen working" at most every 15 min while locked; `BootReceiver`, Home and tag taps note "found off"; `ForceStops` reads exit records.
+- The Accessibility disclosure gains: "If you turn it off while Stad is locked, Stad notes when, so you can see it later on this phone."
+- Review fixes: only exit records that are force-stops count (not a Recents removal, or an update below Android 14: `ForceStopRecord`); the tag tap, debug lock and found-off checks read the service state inside their edit (`BlockingProbe`); day labels by calendar date; Home's clock refreshes each minute; the card and Clear stay while older entries are stored.
+- **Unit tests:** 160 (+32: `EscapeTrackerTest` 16, `EscapeLogTest` 5, `ForceStopRecordTest` 4, `HistoryDaysTest` 3, `EscapeRepositoryTest` 4).
+
 ## Slice 2.1 — Lock survives (PR #5, in review)
 
 - After a reboot, an update of Stad or the service reconnecting, a locked phone blocks again with no user action as long as Stad's Accessibility service is still on, including the app already on screen (if it's off, the lock survives but the user must turn it back on; see below): the service can't see what's in front until the next screen change, so while locked with apps listed and the foreground unknown it goes Home once (retrying every second if Android refuses). Cost: after an update while locked, the app that was open goes to the background once, even an unblocked one.

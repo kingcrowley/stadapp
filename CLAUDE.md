@@ -51,5 +51,6 @@ Per-slice detail lives in `docs/CHANGELOG.md`; this table is the index.
 | 1.2 — Blocking engine | Merged | 65 | PR #3, `Phase1-Slice2-Complete` |
 | 1.3 — NFC lock | In review | 114 | PR #4 |
 | 2.1 — Lock survives | In review | 128 | PR #5 |
+| 2.2 — Blocking history | In review | 160 | PR #6 |
 
-**Next up:** Slices 1.3 (NFC lock, PR #4) and 2.1 (lock survives reboot, update and force-stop, PR #5) are in review. 2.1 spec: `docs/superpowers/specs/2026-11-20-slice2.1-lock-survives-design.md`; plan: `docs/superpowers/plans/2026-11-20-slice2.1-lock-survives.md`. Then 2.2 — close the escape routes (force-stop, uninstall, turning the service off while locked).
+**Next up:** Slices 1.3 (PR #4), 2.1 (PR #5) and 2.2 (blocking history, PR #6) are in review, waiting on phone tests with NFC tags. 2.2 replaced "close the escape routes" because Google Play forbids blocking uninstall or disabling (see the 2.2 spec, `docs/superpowers/specs/2026-11-21-slice2.2-escape-log-design.md`). Then 2.3 — sneaky look.
